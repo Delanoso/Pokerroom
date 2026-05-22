@@ -575,6 +575,8 @@ export function TableRoomClient({
   const [sessionStats, setSessionStats] = useState<Map<string, SessionStatCounts>>(new Map());
   const [mySeatIndex, setMySeatIndex] = useState(initial.mySeatIndex);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [isPortraitOrientation, setIsPortraitOrientation] = useState(false);
+  const [rotateScale, setRotateScale] = useState(1);
   const [mobileFitScale, setMobileFitScale] = useState(1);
   const [laptopTableSize, setLaptopTableSize] = useState({ width: 0, height: 0 });
   const tableSceneRef = useRef<HTMLDivElement>(null);
@@ -587,15 +589,52 @@ export function TableRoomClient({
   }, [tableId, mySeatIndex]);
 
   useEffect(() => {
-    const mq = window.matchMedia("(max-width: 639px)");
-    const apply = () => setIsMobileViewport(mq.matches);
+    const narrow = window.matchMedia("(max-width: 639px)");
+    const portrait = window.matchMedia("(orientation: portrait)");
+    const apply = () => {
+      setIsMobileViewport(narrow.matches);
+      setIsPortraitOrientation(portrait.matches);
+    };
     apply();
-    mq.addEventListener("change", apply);
-    return () => mq.removeEventListener("change", apply);
+    narrow.addEventListener("change", apply);
+    portrait.addEventListener("change", apply);
+    window.addEventListener("resize", apply);
+    window.addEventListener("orientationchange", apply);
+    return () => {
+      narrow.removeEventListener("change", apply);
+      portrait.removeEventListener("change", apply);
+      window.removeEventListener("resize", apply);
+      window.removeEventListener("orientationchange", apply);
+    };
   }, []);
 
-  /** Portrait phone: same wide laptop table, scaled to fit (upright text, no CSS rotate). */
-  const fitLaptopTableInPortrait = isMobileViewport && !embedded;
+  const showLandscapeInPortrait = isMobileViewport && isPortraitOrientation && !embedded;
+  const fitLaptopTableInPortrait = isMobileViewport && !isPortraitOrientation && !embedded;
+
+  useEffect(() => {
+    if (!showLandscapeInPortrait) {
+      setRotateScale(1);
+      return;
+    }
+    const outer = tableSceneRef.current;
+    if (!outer) return;
+    const update = () => {
+      const w = outer.clientWidth;
+      const h = outer.clientHeight;
+      const scale = Math.min(w / window.innerHeight, h / window.innerWidth) * 0.94;
+      setRotateScale(Math.max(0.35, Math.min(1, scale)));
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(outer);
+    window.addEventListener("resize", update);
+    window.addEventListener("orientationchange", update);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", update);
+      window.removeEventListener("orientationchange", update);
+    };
+  }, [showLandscapeInPortrait]);
 
   useEffect(() => {
     if (!fitLaptopTableInPortrait) {
@@ -1654,21 +1693,42 @@ export function TableRoomClient({
           logLines={tableLogLines}
           logScrollRef={tableLogScrollRef}
         />
-        <div className="relative flex h-full min-h-0 w-full items-center justify-center overflow-hidden max-sm:pl-10 sm:mt-4">
         <div
-          className="relative shrink-0 overflow-visible rounded-[1.75rem] sm:rounded-[2.25rem]"
-          style={
-            fitLaptopTableInPortrait && laptopTableSize.width > 0
-              ? {
-                  width: laptopTableSize.width,
-                  height: laptopTableSize.height,
-                  transform: `scale(${mobileFitScale})`,
-                  transformOrigin: "center center",
-                }
-              : undefined
+          className={
+            showLandscapeInPortrait
+              ? "absolute inset-0 overflow-hidden"
+              : "relative flex h-full min-h-0 w-full items-center justify-center overflow-hidden max-sm:pl-10 sm:mt-4"
           }
         >
-        <div className="relative flex h-full w-full min-h-0 flex-col items-stretch justify-center overflow-visible">
+        <div
+          className={
+            showLandscapeInPortrait
+              ? "absolute left-1/2 top-1/2 z-[5]"
+              : "relative shrink-0 overflow-visible rounded-[1.75rem] sm:rounded-[2.25rem]"
+          }
+          style={
+            showLandscapeInPortrait
+              ? {
+                  width: "100dvh",
+                  height: "100dvw",
+                  transform: `translate(-50%, -50%) rotate(90deg) scale(${rotateScale})`,
+                  transformOrigin: "center center",
+                }
+              : fitLaptopTableInPortrait && laptopTableSize.width > 0
+                ? {
+                    width: laptopTableSize.width,
+                    height: laptopTableSize.height,
+                    transform: `scale(${mobileFitScale})`,
+                    transformOrigin: "center center",
+                  }
+                : undefined
+          }
+        >
+        <div
+          className={`relative flex min-h-0 w-full flex-col items-stretch justify-center overflow-visible ${
+            showLandscapeInPortrait ? "pointer-events-auto h-full min-h-[280px]" : "h-full w-full"
+          } rounded-[1.75rem] sm:rounded-[2.25rem]`}
+        >
         {/* Wood floor (full bleed), then rug on top; object-contain letterboxing shows wood */}
         <div
           className="pointer-events-none absolute inset-0 overflow-hidden rounded-[1.75rem] shadow-[inset_0_0_50px_rgba(0,0,0,0.35)] sm:rounded-[2.25rem]"
@@ -1680,7 +1740,7 @@ export function TableRoomClient({
             decoding="async"
             fetchPriority="low"
             draggable={false}
-            className={`pointer-events-none absolute inset-0 z-0 h-full w-full select-none object-cover object-center ${fitLaptopTableInPortrait ? "block" : "hidden sm:block"}`}
+            className={`pointer-events-none absolute inset-0 z-0 h-full w-full select-none object-cover object-center ${showLandscapeInPortrait || fitLaptopTableInPortrait ? "block" : "hidden sm:block"}`}
           />
           <img
             src="/images/table-surround-rug.webp"
@@ -1690,7 +1750,7 @@ export function TableRoomClient({
             decoding="async"
             fetchPriority="low"
             draggable={false}
-            className={`table-room-rug-img pointer-events-none absolute left-1/2 top-1/2 z-[1] max-h-none max-w-none select-none object-contain object-center contrast-[1.04] ${fitLaptopTableInPortrait ? "block" : "hidden sm:block"}`}
+            className={`table-room-rug-img pointer-events-none absolute left-1/2 top-1/2 z-[1] max-h-none max-w-none select-none object-contain object-center contrast-[1.04] ${showLandscapeInPortrait || fitLaptopTableInPortrait ? "block" : "hidden sm:block"}`}
             style={{
               width: "clamp(320px, min(96vmin, 98dvh), min(4200px, 140vw))",
               height: "clamp(880px, max(100vw, 280vw), 5600px)",
@@ -1706,9 +1766,11 @@ export function TableRoomClient({
         {/* Oval table — explicit min/max size; rail+felt use % insets so they cannot flex-collapse to 0 */}
         <div
           className={`relative z-10 mx-auto min-w-0 shrink-0 select-none overflow-visible ${
-            fitLaptopTableInPortrait
-              ? "h-full w-full"
-              : "h-[min(58dvh,460px)] w-[min(100vw,calc(2.12*min(58dvh,460px)))] sm:h-[min(78dvh,800px)] sm:w-[min(100vw,calc(2.12*min(78dvh,800px)))]"
+            showLandscapeInPortrait
+              ? "h-[min(72dvh,620px)] w-[min(calc(2.12*min(72dvh,620px)),96dvw,1200px)]"
+              : fitLaptopTableInPortrait
+                ? "h-full w-full"
+                : "h-[min(58dvh,460px)] w-[min(100vw,calc(2.12*min(58dvh,460px)))] sm:h-[min(78dvh,800px)] sm:w-[min(100vw,calc(2.12*min(78dvh,800px)))]"
           }`}
         >
         {/* Padded leather rail + red felt */}
@@ -2014,7 +2076,7 @@ export function TableRoomClient({
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center pt-[2%]">
           <div className="pointer-events-auto flex max-h-[88%] max-w-[min(92%,420px)] flex-col items-center gap-2 px-1.5 text-center sm:max-w-[min(88%,480px)] sm:gap-3 sm:px-2">
             <div
-              className={`pointer-events-none -mb-0.5 justify-center ${fitLaptopTableInPortrait ? "flex" : "hidden sm:flex"}`}
+              className={`pointer-events-none -mb-0.5 justify-center ${showLandscapeInPortrait || fitLaptopTableInPortrait ? "flex" : "hidden sm:flex"}`}
               aria-hidden
             >
               <div className="rotate-[-4deg] px-2 py-1.5 text-center">
