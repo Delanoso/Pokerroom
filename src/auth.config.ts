@@ -3,6 +3,7 @@ import type { NextAuthConfig } from "next-auth";
 /** Edge/proxy-safe Auth.js config (no Prisma). Used by middleware/proxy. */
 export const authConfig = {
   trustHost: true,
+  basePath: "/api/auth",
   pages: {
     signIn: "/login",
   },
