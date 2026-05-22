@@ -184,7 +184,7 @@ export function TablePlayerSidebar({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded border border-zinc-800/80 bg-black/85 px-2 py-1.5 text-[8px] font-bold uppercase tracking-wider max-sm:[writing-mode:horizontal-tb] sm:px-1 sm:py-2 sm:[writing-mode:vertical-rl] ${className}`}
+      className={`rounded border border-zinc-800/80 bg-black/85 px-1 py-2 text-[8px] font-bold uppercase tracking-wider [writing-mode:vertical-rl] ${className}`}
       title={title}
     >
       {label}
@@ -193,17 +193,17 @@ export function TablePlayerSidebar({
 
   return (
     <aside
-      className={`pointer-events-auto fixed z-[35] flex flex-col gap-1.5 transition-[width] duration-200 max-sm:bottom-[calc(5.5rem+env(safe-area-inset-bottom))] max-sm:left-0 max-sm:right-0 max-sm:top-auto max-sm:h-auto max-sm:w-full max-sm:flex-row max-sm:justify-center max-sm:px-1 max-sm:py-0 sm:left-0 sm:top-0 sm:h-dvh sm:max-h-dvh sm:py-0.5 sm:pl-0.5 ${widthClass}`}
+      className={`pointer-events-auto fixed left-0 top-0 z-[35] flex h-dvh max-h-dvh flex-col gap-1.5 py-0.5 pl-0.5 transition-[width] duration-200 ${widthClass}`}
       aria-label="Player notes, stats, and table log"
     >
       {!anyExpanded ? (
-        <div className="flex flex-col gap-1 max-sm:flex-row max-sm:gap-1.5">
+        <div className="flex flex-col gap-1">
           {collapsedTab("Notes", () => setNotesExpanded(true), "text-amber-500/90", "Expand notes")}
           {collapsedTab("Stats", () => setStatsExpanded(true), "text-sky-400/90", "Expand stats")}
           {collapsedTab("Log", () => setLogExpanded(true), "text-zinc-400", "Expand table log")}
         </div>
       ) : (
-        <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto overflow-x-hidden max-sm:fixed max-sm:bottom-[calc(5.5rem+env(safe-area-inset-bottom))] max-sm:left-1 max-sm:right-1 max-sm:max-h-[38vh] max-sm:rounded-lg max-sm:border max-sm:border-zinc-800/90 max-sm:bg-black/95 max-sm:shadow-xl">
+        <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto overflow-x-hidden">
           <CollapsibleBlock title="Notes" expanded={notesExpanded} onToggle={() => setNotesExpanded((e) => !e)}>
             <div className="flex max-h-[min(18vh,170px)] flex-col overflow-hidden">
               {opponents.length === 0 ? (
