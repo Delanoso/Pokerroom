@@ -215,6 +215,7 @@ export class BotFleet {
         const seat = await this.db.tableSeat.findFirst({
           where: { tableId, userId },
           select: {
+            id: true,
             seatIndex: true,
             stackChips: true,
             sittingOut: true,
@@ -229,7 +230,7 @@ export class BotFleet {
 
         if (seat.sittingOut || seat.sitOutNextHand) {
           await this.db.tableSeat.update({
-            where: { tableId, userId },
+            where: { id: seat.id },
             data: {
               sittingOut: false,
               sitOutSince: null,
