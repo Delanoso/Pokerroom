@@ -1639,7 +1639,11 @@ export function TableRoomClient({
         </div>
         {/* Oval table — explicit min/max size; rail+felt use % insets so they cannot flex-collapse to 0 */}
         <div
-          className="relative z-10 mx-auto min-w-0 shrink-0 select-none overflow-visible h-[min(54dvh,440px)] w-[min(92vw,calc(2.12*min(54dvh,440px)))] sm:h-[min(78dvh,800px)] sm:w-[min(100vw,calc(2.12*min(78dvh,800px)))]"
+          className="relative z-10 mx-auto min-h-[min(78dvh,800px)] w-full min-w-0 shrink-0 select-none overflow-visible"
+          style={{
+            height: "min(78dvh, 800px)",
+            width: "min(100vw, calc(2.12 * min(78dvh, 800px)))",
+          }}
         >
         {/* Padded leather rail + red felt */}
         <div
@@ -1755,7 +1759,7 @@ export function TableRoomClient({
               <div
                 key={seat.seatIndex}
                 style={seatLayoutStyle(seat.seatIndex, table.maxSeats)}
-                className="z-20 flex w-[9.5rem] max-w-[38vw] flex-col items-stretch sm:w-[11.5rem] sm:max-w-none"
+                className="z-20 flex w-[11.5rem] max-w-[42vw] flex-col items-stretch sm:max-w-none"
               >
                 {oppShowHole && hp && holeCardsReady(hp.hole) ? (
                   <div className="mb-1 flex flex-col items-center gap-1 drop-shadow-md pointer-events-none">
