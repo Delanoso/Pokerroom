@@ -575,6 +575,8 @@ export function TableRoomClient({
   const [sessionStats, setSessionStats] = useState<Map<string, SessionStatCounts>>(new Map());
   const [mySeatIndex, setMySeatIndex] = useState(initial.mySeatIndex);
   const [portraitLayout, setPortraitLayout] = useState(false);
+  const [rotateScale, setRotateScale] = useState(1);
+  const tableSceneRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (mySeatIndex !== null) claimTablePlayTab(tableId);
@@ -587,6 +589,33 @@ export function TableRoomClient({
     mq.addEventListener("change", apply);
     return () => mq.removeEventListener("change", apply);
   }, []);
+
+  const rotatedLandscape = portraitLayout && !embedded;
+
+  useEffect(() => {
+    if (!rotatedLandscape) {
+      setRotateScale(1);
+      return;
+    }
+    const outer = tableSceneRef.current;
+    if (!outer) return;
+    const update = () => {
+      const w = outer.clientWidth;
+      const h = outer.clientHeight;
+      const scale = Math.min(w / window.innerHeight, h / window.innerWidth) * 0.94;
+      setRotateScale(Math.max(0.35, Math.min(1, scale)));
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(outer);
+    window.addEventListener("resize", update);
+    window.addEventListener("orientationchange", update);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", update);
+      window.removeEventListener("orientationchange", update);
+    };
+  }, [rotatedLandscape]);
   const [viewerCanDeal, setViewerCanDeal] = useState(initial.viewerCanDeal);
   const [isSiteAdmin, setIsSiteAdmin] = useState(initial.isSiteAdmin);
   const [tournament, setTournament] = useState<TournamentViewerSnapshot | null>(initial.tournament);
@@ -1301,9 +1330,7 @@ export function TableRoomClient({
     };
   }, [restoreVisibleCards]);
 
-  const tableLayout: TableLayoutMode =
-    portraitLayout && mySeatIndex !== null ? "portrait" : "desktop";
-  const seatLayoutOpts = { mode: tableLayout, heroSeatIndex: mySeatIndex };
+  const seatLayoutOpts = { mode: "desktop" as TableLayoutMode, heroSeatIndex: mySeatIndex };
 
   return (
     <div className={`flex min-h-0 flex-1 flex-col gap-1 overflow-hidden ${className}`.trim()}>
@@ -1600,7 +1627,13 @@ export function TableRoomClient({
         </div>
       ) : null}
 
-      <div className="relative min-h-0 flex-1">
+      {rotatedLandscape ? (
+        <p className="shrink-0 text-center text-[8px] leading-snug text-zinc-500">
+          Table shown in landscape — tilt phone sideways for the best view, or use as-is.
+        </p>
+      ) : null}
+
+      <div ref={tableSceneRef} className="relative min-h-0 flex-1 overflow-hidden">
         <TablePlayerSidebar
           viewerUserId={viewerUserId}
           embedded={embedded}
@@ -1616,14 +1649,35 @@ export function TableRoomClient({
           logLines={tableLogLines}
           logScrollRef={tableLogScrollRef}
         />
-        <div className="relative mt-1 flex min-h-0 w-full flex-col items-stretch justify-center overflow-visible rounded-[1.75rem] sm:mt-4 sm:rounded-[2.25rem]">
+        <div
+          className={
+            rotatedLandscape
+              ? "absolute left-1/2 top-1/2 z-[5]"
+              : "relative mt-1 flex min-h-0 w-full flex-col items-stretch justify-center overflow-visible rounded-[1.75rem] sm:mt-4 sm:rounded-[2.25rem]"
+          }
+          style={
+            rotatedLandscape
+              ? {
+                  width: "100dvh",
+                  height: "100dvw",
+                  transform: `translate(-50%, -50%) rotate(90deg) scale(${rotateScale})`,
+                  transformOrigin: "center center",
+                }
+              : undefined
+          }
+        >
+        <div
+          className={`relative flex min-h-0 w-full flex-col items-stretch justify-center overflow-visible ${
+            rotatedLandscape ? "pointer-events-auto h-full min-h-[280px]" : ""
+          } rounded-[1.75rem] sm:rounded-[2.25rem]`}
+        >
         {/* Wood floor (full bleed), then rug on top; object-contain letterboxing shows wood */}
         <div
           className="pointer-events-none absolute inset-0 overflow-hidden rounded-[1.75rem] shadow-[inset_0_0_50px_rgba(0,0,0,0.35)] sm:rounded-[2.25rem]"
           aria-hidden
         >
           <div
-            className="absolute inset-0 z-0 bg-gradient-to-b from-[#1c1410] via-[#120c09] to-[#080605] sm:hidden"
+            className={`absolute inset-0 z-0 bg-gradient-to-b from-[#1c1410] via-[#120c09] to-[#080605] ${rotatedLandscape ? "hidden" : "sm:hidden"}`}
             aria-hidden
           />
           <img
@@ -1632,7 +1686,7 @@ export function TableRoomClient({
             decoding="async"
             fetchPriority="low"
             draggable={false}
-            className="pointer-events-none absolute inset-0 z-0 hidden h-full w-full select-none object-cover object-center sm:block"
+            className={`pointer-events-none absolute inset-0 z-0 h-full w-full select-none object-cover object-center ${rotatedLandscape ? "block" : "hidden sm:block"}`}
           />
           <img
             src="/images/table-surround-rug.webp"
@@ -1642,7 +1696,7 @@ export function TableRoomClient({
             decoding="async"
             fetchPriority="low"
             draggable={false}
-            className="table-room-rug-img pointer-events-none absolute left-1/2 top-1/2 z-[1] hidden max-h-none max-w-none select-none object-contain object-center contrast-[1.04] sm:block"
+            className={`table-room-rug-img pointer-events-none absolute left-1/2 top-1/2 z-[1] max-h-none max-w-none select-none object-contain object-center contrast-[1.04] ${rotatedLandscape ? "block" : "hidden sm:block"}`}
             style={{
               width: "clamp(320px, min(96vmin, 98dvh), min(4200px, 140vw))",
               height: "clamp(880px, max(100vw, 280vw), 5600px)",
@@ -1658,8 +1712,8 @@ export function TableRoomClient({
         {/* Oval table — explicit min/max size; rail+felt use % insets so they cannot flex-collapse to 0 */}
         <div
           className={`relative z-10 mx-auto min-w-0 shrink-0 select-none overflow-visible ${
-            portraitLayout
-              ? "h-[min(50dvh,440px)] w-[min(94vw,400px)]"
+            rotatedLandscape
+              ? "h-[min(72dvh,620px)] w-[min(calc(2.12*min(72dvh,620px)),96dvw,1200px)]"
               : "h-[min(58dvh,460px)] w-[min(100vw,calc(2.12*min(58dvh,460px)))] sm:h-[min(78dvh,800px)] sm:w-[min(100vw,calc(2.12*min(78dvh,800px)))]"
           }`}
         >
@@ -1777,13 +1831,7 @@ export function TableRoomClient({
               <div
                 key={seat.seatIndex}
                 style={seatLayoutStyle(seat.seatIndex, table.maxSeats, seatLayoutOpts)}
-                className={`z-20 flex flex-col items-stretch ${
-                  portraitLayout
-                    ? isMe
-                      ? "w-[9.5rem] max-w-[52vw]"
-                      : "w-[7rem] max-w-[32vw]"
-                    : "w-[8.25rem] max-w-[36vw] sm:w-[11.5rem] sm:max-w-[42vw] md:max-w-none"
-                }`}
+                className="z-20 flex w-[8.25rem] max-w-[36vw] flex-col items-stretch sm:w-[11.5rem] sm:max-w-[42vw] md:max-w-none"
               >
                 {oppShowHole && hp && holeCardsReady(hp.hole) ? (
                   <div className="mb-1 flex flex-col items-center gap-1 drop-shadow-md pointer-events-none">
@@ -1928,13 +1976,7 @@ export function TableRoomClient({
         </div>
 
         {/* Dealer + chip tray (not a seat). Top-centre; player seats ring the felt. */}
-        <div
-          className={`pointer-events-auto z-[25] ${
-            portraitLayout
-              ? "absolute right-[3%] top-[2%] w-[min(28vw,5.5rem)]"
-              : "absolute left-1/2 top-[1.25%] w-[min(82vw,9.25rem)] -translate-x-1/2 sm:w-[min(88vw,11.75rem)]"
-          }`}
-        >
+        <div className="pointer-events-auto absolute left-1/2 top-[1.25%] z-[25] w-[min(82vw,9.25rem)] -translate-x-1/2 sm:w-[min(88vw,11.75rem)]">
           <div className="rounded-md border border-amber-800/50 bg-gradient-to-b from-zinc-900/95 to-black/90 p-1.5 shadow-xl ring-1 ring-amber-900/30">
             <p className="text-center text-[6px] font-bold uppercase tracking-widest text-amber-300/90">Dealer</p>
             <div
@@ -1977,7 +2019,10 @@ export function TableRoomClient({
         {/* Center: pot above community cards */}
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center pt-[2%]">
           <div className="pointer-events-auto flex max-h-[88%] max-w-[min(92%,420px)] flex-col items-center gap-2 px-1.5 text-center sm:max-w-[min(88%,480px)] sm:gap-3 sm:px-2">
-            <div className="pointer-events-none -mb-0.5 hidden justify-center sm:flex" aria-hidden>
+            <div
+              className={`pointer-events-none -mb-0.5 justify-center ${rotatedLandscape ? "flex" : "hidden sm:flex"}`}
+              aria-hidden
+            >
               <div className="rotate-[-4deg] px-2 py-1.5 text-center">
                 <p className="text-[7px] font-semibold uppercase tracking-[0.34em] text-amber-200/85 sm:text-[8px] sm:tracking-[0.36em] [text-shadow:0_1px_2px_rgba(0,0,0,0.95),0_0_18px_rgba(251,191,36,0.12)]">
                   Private club
@@ -2049,7 +2094,7 @@ export function TableRoomClient({
           </div>
         </div>
         </div>
-      </div>
+        </div>
       </div>
 
       {sitSeat !== null ? (

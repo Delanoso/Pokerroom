@@ -19,11 +19,11 @@ body {
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
 
-/* Table room: smaller felt + seats on narrow viewports */
+/* Rug asset is pre-rotated; keep scale tame inside the rotated phone viewport */
 @media (max-width: 639px) {
   .table-room-rug-img {
-    width: clamp(240px, min(88vmin, 72dvh), min(2800px, 118vw)) !important;
-    height: clamp(640px, max(88vw, 220vw), 4200px) !important;
-    transform: translate3d(-50%, -50%, 0) rotate(90deg) scaleY(1.38) !important;
+    width: clamp(280px, min(92vmin, 88dvh), min(4200px, 140vw)) !important;
+    height: clamp(720px, max(100vw, 240vw), 5600px) !important;
+    transform: translate3d(-50%, -50%, 0) rotate(90deg) scaleY(1.42) !important;
   }
 }
