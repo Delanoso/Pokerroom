@@ -19,12 +19,3 @@ body {
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
 
-/* Rug inside portrait-rotated table scene */
-@media (max-width: 639px) and (orientation: portrait) {
-  .table-room-rug-img {
-    width: clamp(280px, min(92vmin, 88dvh), min(4200px, 140vw)) !important;
-    height: clamp(720px, max(100vw, 240vw), 5600px) !important;
-    transform: translate3d(-50%, -50%, 0) rotate(90deg) scaleY(1.42) !important;
-  }
-}
-
