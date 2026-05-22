@@ -76,14 +76,15 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   if (!wantSitOut) {
-    await prisma.$executeRaw`
-      UPDATE "TableSeat" SET
-        "sittingOut" = 0,
-        "sitOutSince" = NULL,
-        "sitOutNextHand" = 0,
-        "consecutiveIdleHands" = 0
-      WHERE "id" = ${seatId}
-    `;
+    await prisma.tableSeat.update({
+      where: { id: seatId },
+      data: {
+        sittingOut: false,
+        sitOutSince: null,
+        sitOutNextHand: false,
+        consecutiveIdleHands: 0,
+      },
+    });
     await tryAutoStartHand(prisma, tableId);
     void notifyTableChanged(tableId);
     return NextResponse.json({ ok: true });
@@ -94,22 +95,24 @@ export async function POST(request: Request, { params }: Params) {
     const st = deserializeHandState(active.stateJson);
     const inThisHand = st.players.some((p) => p.userId === gate.userId);
     if (inThisHand) {
-      await prisma.$executeRaw`
-        UPDATE "TableSeat" SET "sitOutNextHand" = 1 WHERE "id" = ${seatId}
-      `;
+      await prisma.tableSeat.update({
+        where: { id: seatId },
+        data: { sitOutNextHand: true },
+      });
       await tryAutoStartHand(prisma, tableId);
       void notifyTableChanged(tableId);
       return NextResponse.json({ ok: true, pendingNextHand: true });
     }
   }
 
-  await prisma.$executeRaw`
-    UPDATE "TableSeat" SET
-      "sittingOut" = 1,
-      "sitOutSince" = ${new Date()},
-      "sitOutNextHand" = 0
-    WHERE "id" = ${seatId}
-  `;
+  await prisma.tableSeat.update({
+    where: { id: seatId },
+    data: {
+      sittingOut: true,
+      sitOutSince: new Date(),
+      sitOutNextHand: false,
+    },
+  });
   await tryAutoStartHand(prisma, tableId);
   void notifyTableChanged(tableId);
   return NextResponse.json({ ok: true });

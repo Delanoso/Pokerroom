@@ -1,4 +1,4 @@
-import { auth, signOut } from "@/auth";
+import { auth } from "@/auth";
 import { PlayerTopNav } from "@/components/player-top-nav";
 import { PokerChrome } from "@/components/poker-chrome";
 import { formatZar } from "@/lib/format-currency";
@@ -26,19 +26,6 @@ export default async function DashboardPage() {
         <span className="text-zinc-400">{session.user.name}</span>
       </span>
       <PlayerTopNav isAdmin={isAdmin} />
-      <form
-        action={async () => {
-          "use server";
-          await signOut({ redirectTo: "/" });
-        }}
-      >
-        <button
-          type="submit"
-          className="rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
-        >
-          Sign out
-        </button>
-      </form>
     </>
   );
 

@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { SignOutButton } from "@/components/sign-out-button";
 import { prisma } from "@/lib/prisma";
 import { fetchPokerTableTournamentMetaOne } from "@/lib/poker-table-tournament-meta";
 import { getTournamentViewerSnapshot, userMayViewPrivateTournament } from "@/lib/tournament-policy";
@@ -145,14 +146,17 @@ export default async function TablePage({ params }: Props) {
       }}
     >
       <div className="mx-auto flex h-full min-h-0 w-full max-w-6xl flex-col">
-        <a
-          href="/tables"
-          target={LOBBY_WINDOW_TARGET}
-          rel="noopener noreferrer"
-          className="shrink-0 py-0.5 text-[10px] leading-none text-amber-200/90 hover:text-amber-100"
-        >
-          ← Tables (lobby)
-        </a>
+        <div className="flex shrink-0 items-center justify-between gap-2">
+          <a
+            href="/tables"
+            target={LOBBY_WINDOW_TARGET}
+            rel="noopener noreferrer"
+            className="py-0.5 text-[10px] leading-none text-amber-200/90 hover:text-amber-100"
+          >
+            ← Tables (lobby)
+          </a>
+          <SignOutButton className="rounded border border-zinc-600 px-2 py-0.5 text-[10px] text-zinc-300 hover:border-zinc-500 hover:text-zinc-100" />
+        </div>
         <TableRoomClient className="min-h-0 flex-1" tableId={id} initial={initial} />
       </div>
     </div>

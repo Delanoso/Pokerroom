@@ -10,6 +10,8 @@ import {
 import { loadLearningStore, saveLearningStore } from "@/lib/bot/learning-store";
 import { textureFromProfiles } from "@/lib/bot/opponent-adjust";
 import { adminLeaveBotFromTables } from "@/lib/admin-bot-seat";
+import { notifyTableChanged } from "@/lib/notify-table";
+import { tryAutoStartHand } from "@/lib/poker/try-auto-start-hand";
 import { syncSitAndGoAfterHand } from "@/lib/poker/sit-and-go-sync";
 import {
   clearPlayerFromFlight,
@@ -215,12 +217,28 @@ export class BotFleet {
           select: {
             seatIndex: true,
             stackChips: true,
+            sittingOut: true,
+            sitOutNextHand: true,
             user: { select: { isBot: true, blockedAt: true } },
             table: { select: { closedAt: true } },
           },
         });
         if (!seat?.user?.isBot || seat.user.blockedAt || seat.table.closedAt) {
           return;
+        }
+
+        if (seat.sittingOut || seat.sitOutNextHand) {
+          await this.db.tableSeat.update({
+            where: { tableId, userId },
+            data: {
+              sittingOut: false,
+              sitOutSince: null,
+              sitOutNextHand: false,
+              consecutiveIdleHands: 0,
+            },
+          });
+          await tryAutoStartHand(this.db, tableId);
+          void notifyTableChanged(tableId);
         }
 
         const { handId, hand, tableKind } = await syncTableHandForBot(this.db, tableId, userId);

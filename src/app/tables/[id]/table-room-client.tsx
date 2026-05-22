@@ -1048,6 +1048,7 @@ export function TableRoomClient({
     }
     await load();
     await loadHand();
+    await loadHand();
   }
 
   async function onStackAdd() {

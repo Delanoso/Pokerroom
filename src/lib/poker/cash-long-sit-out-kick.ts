@@ -43,17 +43,18 @@ export async function removeCashSittersPastSitOutLimit(prisma: PrismaClient, tab
             },
           });
         }
-        await tx.$executeRaw`
-          UPDATE "TableSeat" SET
-            "userId" = NULL,
-            "stackChips" = 0,
-            "sittingOut" = 0,
-            "sitOutSince" = NULL,
-            "sitOutNextHand" = 0,
-            "waitingForNextHand" = 0,
-            "consecutiveIdleHands" = 0
-          WHERE "id" = ${s.id}
-        `;
+        await tx.tableSeat.update({
+          where: { id: s.id },
+          data: {
+            userId: null,
+            stackChips: 0,
+            sittingOut: false,
+            sitOutSince: null,
+            sitOutNextHand: false,
+            waitingForNextHand: false,
+            consecutiveIdleHands: 0,
+          },
+        });
       });
     }
 

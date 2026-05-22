@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { PokerChrome } from "@/components/poker-chrome";
+import { SignOutButton } from "@/components/sign-out-button";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -19,6 +20,7 @@ export default async function TableWindowsPage() {
       <Link href="/dashboard" className="rounded-lg px-3 py-2 text-sm text-zinc-400 hover:bg-zinc-900/80 hover:text-zinc-100">
         Lobby
       </Link>
+      <SignOutButton />
     </>
   );
 

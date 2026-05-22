@@ -1,4 +1,5 @@
 import { HandRankingsChartButton } from "@/components/hand-rankings-chart";
+import { SignOutButton } from "@/components/sign-out-button";
 import Link from "next/link";
 
 const navLink =
@@ -40,6 +41,7 @@ export function PlayerTopNav({
           Operator
         </Link>
       ) : null}
+      <SignOutButton />
     </>
   );
 }

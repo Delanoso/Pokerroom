@@ -80,6 +80,16 @@ export async function finalizeCompletedHand(
         });
       }
 
+      const playerIds = state.players.map((pl) => pl.userId);
+      const botRows =
+        playerIds.length > 0
+          ? await tx.user.findMany({
+              where: { id: { in: playerIds }, isBot: true },
+              select: { id: true },
+            })
+          : [];
+      const botUserIds = new Set(botRows.map((u) => u.id));
+
       for (const pl of state.players) {
         const timeouts = state.timeoutActionsByUser?.[pl.userId] ?? 0;
         const manual = state.manualActionsByUser?.[pl.userId] ?? 0;
@@ -92,7 +102,7 @@ export async function finalizeCompletedHand(
             where: { id: seat.id },
             data: { consecutiveIdleHands: 0 },
           });
-        } else if (timeouts > 0) {
+        } else if (timeouts > 0 && !botUserIds.has(pl.userId)) {
           const next = seat.consecutiveIdleHands + 1;
           if (next >= 3) {
             await tx.tableSeat.update({

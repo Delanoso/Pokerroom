@@ -1,17 +1,21 @@
 import Link from "next/link";
 import { auth } from "@/auth";
 import { PokerChrome } from "@/components/poker-chrome";
+import { SignOutButton } from "@/components/sign-out-button";
 
 export default async function Home() {
   const session = await auth();
 
   const navRight = session?.user ? (
-    <Link
-      href="/dashboard"
-      className="rounded-lg bg-gradient-to-r from-amber-600 to-amber-500 px-4 py-2 text-sm font-semibold text-black shadow-md shadow-amber-900/30 hover:from-amber-500 hover:to-amber-400"
-    >
-      Enter lobby
-    </Link>
+    <>
+      <SignOutButton />
+      <Link
+        href="/dashboard"
+        className="rounded-lg bg-gradient-to-r from-amber-600 to-amber-500 px-4 py-2 text-sm font-semibold text-black shadow-md shadow-amber-900/30 hover:from-amber-500 hover:to-amber-400"
+      >
+        Enter lobby
+      </Link>
+    </>
   ) : (
     <Link
       href="/login"
