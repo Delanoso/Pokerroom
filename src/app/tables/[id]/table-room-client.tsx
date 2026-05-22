@@ -2095,6 +2095,7 @@ export function TableRoomClient({
         </div>
         </div>
         </div>
+        </div>
       </div>
 
       {sitSeat !== null ? (
