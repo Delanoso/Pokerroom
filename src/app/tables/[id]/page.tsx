@@ -133,7 +133,7 @@ export default async function TablePage({ params }: Props) {
 
   return (
     <div
-      className="flex h-dvh max-h-dvh flex-col overflow-hidden px-1 py-0.5 shadow-[inset_0_0_80px_rgba(0,0,0,0.5)]"
+      className="flex h-dvh max-h-dvh flex-col overflow-hidden px-0.5 py-0.5 shadow-[inset_0_0_80px_rgba(0,0,0,0.5)] sm:px-1"
       style={{
         backgroundColor: "#120c09",
         backgroundImage: [

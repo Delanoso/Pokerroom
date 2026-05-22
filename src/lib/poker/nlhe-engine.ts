@@ -358,7 +358,7 @@ export function ensureTurnDeadline(state: NlheHandState): void {
 export function repairStalledAction(state: NlheHandState): boolean {
   if (state.street === "COMPLETE" || state.street === "SHOWDOWN") return false;
 
-  let changed = repairBettingRoundConsistency(state);
+  const changed = repairBettingRoundConsistency(state);
 
   const actor = state.toAct;
   if (actor !== null) {
@@ -372,7 +372,7 @@ export function repairStalledAction(state: NlheHandState): boolean {
   }
 
   if (actor !== null) {
-    let next = findNextActorFrom(state, actor);
+    const next = findNextActorFrom(state, actor);
     if (next !== null) {
       state.toAct = next;
       touchTurnDeadline(state);

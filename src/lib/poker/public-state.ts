@@ -32,7 +32,7 @@ export function toPublicHandState(
     };
   });
 
-  let legal: PublicHandState["legal"] = [];
+  const legal: PublicHandState["legal"] = [];
   if (
     viewerUserId &&
     viewerSeat !== null &&

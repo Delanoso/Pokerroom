@@ -176,9 +176,9 @@ export function TablePlayerSidebar({
   const anyExpanded = notesExpanded || statsExpanded || logExpanded;
   const widthClass = anyExpanded
     ? embedded
-      ? "w-[min(10.5rem,30vw)]"
-      : "w-[min(11.5rem,20vw)]"
-    : "w-9";
+      ? "w-[min(8.75rem,32vw)] sm:w-[min(10.5rem,30vw)]"
+      : "w-[min(9.5rem,28vw)] sm:w-[min(11.5rem,20vw)]"
+    : "w-8 sm:w-9";
 
   const collapsedTab = (label: string, onClick: () => void, className: string, title: string) => (
     <button

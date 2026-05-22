@@ -482,7 +482,7 @@ const DEALER_TRAY_BREAKDOWN: { denom: ChipDenom; count: number }[] = [
 function SeatAvatar({ username }: { username: string }) {
   const ch = username.charAt(0).toUpperCase() || "?";
   return (
-    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-slate-600 via-slate-800 to-slate-950 text-sm font-bold uppercase text-slate-100 shadow-inner ring-1 ring-sky-900/50">
+    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-slate-600 via-slate-800 to-slate-950 text-xs font-bold uppercase text-slate-100 shadow-inner ring-1 ring-sky-900/50 sm:h-9 sm:w-9 sm:text-sm">
       {ch}
     </div>
   );
@@ -1602,7 +1602,7 @@ export function TableRoomClient({
           logLines={tableLogLines}
           logScrollRef={tableLogScrollRef}
         />
-        <div className="relative mt-2 flex min-h-0 w-full flex-col items-stretch justify-center overflow-visible rounded-[2.25rem] sm:mt-4">
+        <div className="relative mt-1 flex min-h-0 w-full flex-col items-stretch justify-center overflow-visible rounded-[1.75rem] sm:mt-4 sm:rounded-[2.25rem]">
         {/* Wood floor (full bleed), then rug on top; object-contain letterboxing shows wood */}
         <div
           className="pointer-events-none absolute inset-0 overflow-hidden rounded-[2.25rem] shadow-[inset_0_0_50px_rgba(0,0,0,0.35)]"
@@ -1624,7 +1624,7 @@ export function TableRoomClient({
             decoding="async"
             fetchPriority="low"
             draggable={false}
-            className="pointer-events-none absolute left-1/2 top-1/2 z-[1] max-h-none max-w-none select-none object-contain object-center contrast-[1.04]"
+            className="table-room-rug-img pointer-events-none absolute left-1/2 top-1/2 z-[1] max-h-none max-w-none select-none object-contain object-center contrast-[1.04]"
             style={{
               width: "clamp(320px, min(96vmin, 98dvh), min(4200px, 140vw))",
               height: "clamp(880px, max(100vw, 280vw), 5600px)",
@@ -1638,13 +1638,7 @@ export function TableRoomClient({
           />
         </div>
         {/* Oval table — explicit min/max size; rail+felt use % insets so they cannot flex-collapse to 0 */}
-        <div
-          className="relative z-10 mx-auto min-h-[min(78dvh,800px)] w-full min-w-0 shrink-0 select-none overflow-visible"
-          style={{
-            height: "min(78dvh, 800px)",
-            width: "min(100vw, calc(2.12 * min(78dvh, 800px)))",
-          }}
-        >
+        <div className="relative z-10 mx-auto h-[min(58dvh,460px)] w-[min(100vw,calc(2.12*min(58dvh,460px)))] min-w-0 shrink-0 select-none overflow-visible sm:h-[min(78dvh,800px)] sm:w-[min(100vw,calc(2.12*min(78dvh,800px)))]">
         {/* Padded leather rail + red felt */}
         <div
           className="pointer-events-none absolute inset-[1.25%] rounded-[50%] p-[1.75%] shadow-[0_28px_56px_rgba(0,0,0,0.62)]"
@@ -1699,7 +1693,7 @@ export function TableRoomClient({
             style={dealerButtonStyle(hand.buttonSeat, table.maxSeats)}
           >
             <div
-              className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-amber-700 bg-gradient-to-b from-amber-50 to-amber-300 text-[9px] font-black text-black shadow-[0_2px_6px_rgba(0,0,0,0.55)] ring-2 ring-white/30"
+              className="flex h-4 w-4 items-center justify-center rounded-full border-2 border-amber-700 bg-gradient-to-b from-amber-50 to-amber-300 text-[8px] font-black text-black shadow-[0_2px_6px_rgba(0,0,0,0.55)] ring-2 ring-white/30 sm:h-5 sm:w-5 sm:text-[9px]"
               title="Dealer"
             >
               D
@@ -1728,7 +1722,7 @@ export function TableRoomClient({
         ) : null}
 
         {/* Seats */}
-        <div className="absolute inset-0 z-20">
+        <div className="absolute inset-0 z-20 max-sm:origin-center max-sm:scale-[0.93]">
           {table.seats.map((seat) => {
             const isMe = seat.user && mySeatIndex === seat.seatIndex;
             const toActHere = hand?.toAct === seat.seatIndex && hand.street !== "COMPLETE";
@@ -1759,11 +1753,11 @@ export function TableRoomClient({
               <div
                 key={seat.seatIndex}
                 style={seatLayoutStyle(seat.seatIndex, table.maxSeats)}
-                className="z-20 flex w-[11.5rem] max-w-[42vw] flex-col items-stretch sm:max-w-none"
+                className="z-20 flex w-[8.25rem] max-w-[36vw] flex-col items-stretch sm:w-[11.5rem] sm:max-w-[42vw] md:max-w-none"
               >
                 {oppShowHole && hp && holeCardsReady(hp.hole) ? (
                   <div className="mb-1 flex flex-col items-center gap-1 drop-shadow-md pointer-events-none">
-                    <div className="flex origin-bottom scale-[0.72] justify-center gap-0.5">
+                    <div className="flex origin-bottom scale-[0.58] justify-center gap-0.5 sm:scale-[0.72]">
                       <FlippableHoleCard
                         code={hp.hole[0]}
                         faceUp
@@ -1788,7 +1782,7 @@ export function TableRoomClient({
                 ) : null}
                 {isMe && viewerInHand && hand && myHandPlayer ? (
                   <div className="mb-1 flex flex-col items-center gap-0.5 drop-shadow-2xl pointer-events-none">
-                    <div className="flex origin-bottom scale-[0.72] items-end justify-center gap-2">
+                    <div className="flex origin-bottom scale-[0.58] items-end justify-center gap-1.5 sm:scale-[0.72] sm:gap-2">
                       <div className="flex gap-0.5">
                         {holeCardsReady(myHandPlayer.hole) ? (
                           <>
@@ -1821,7 +1815,7 @@ export function TableRoomClient({
                   }`}
                 >
                   <div
-                    className={`rounded-[7px] px-2 py-1.5 ${
+                    className={`rounded-[7px] px-1.5 py-1 sm:px-2 sm:py-1.5 ${
                       seat.user
                         ? isMe
                           ? "bg-gradient-to-br from-slate-900 via-[#0c1929] to-slate-950 ring-1 ring-sky-500/45"
@@ -1829,15 +1823,15 @@ export function TableRoomClient({
                         : "border border-dashed border-slate-500/70 bg-slate-950/95"
                     }`}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
                       {seat.user ? (
                         <SeatAvatar username={seat.user.usernameDisplay} />
                       ) : (
-                        <div className="h-9 w-9 shrink-0 rounded-md bg-slate-800/90 ring-1 ring-slate-600/80" />
+                        <div className="h-7 w-7 shrink-0 rounded-md bg-slate-800/90 ring-1 ring-slate-600/80 sm:h-9 sm:w-9" />
                       )}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-1">
-                          <span className="text-[9px] font-medium text-slate-400">#{seat.seatIndex + 1}</span>
+                          <span className="text-[8px] font-medium text-slate-400 sm:text-[9px]">#{seat.seatIndex + 1}</span>
                           <div className="flex items-center gap-0.5">
                             {actTimer !== null ? (
                               <span className="rounded bg-slate-950 px-1 py-px font-mono text-[8px] font-semibold tabular-nums text-amber-300">
@@ -1848,7 +1842,7 @@ export function TableRoomClient({
                         </div>
                         {seat.user ? (
                           <>
-                            <p className="truncate text-[11px] font-semibold text-slate-100">{seat.user.usernameDisplay}</p>
+                            <p className="truncate text-[10px] font-semibold text-slate-100 sm:text-[11px]">{seat.user.usernameDisplay}</p>
                             {seat.waitingForNextHand ? (
                               <p className="text-[8px] font-medium uppercase tracking-wide text-sky-300/90">
                                 Next hand
@@ -1858,7 +1852,7 @@ export function TableRoomClient({
                                 {seat.sitOutNextHand ? "Sit out next" : "Sitting out"}
                               </p>
                             ) : null}
-                            <p className="text-[10px] font-medium tabular-nums text-amber-200/95">
+                            <p className="text-[9px] font-medium tabular-nums text-amber-200/95 sm:text-[10px]">
                               {displayStack.toLocaleString()}
                             </p>
                           </>
@@ -1904,7 +1898,7 @@ export function TableRoomClient({
         </div>
 
         {/* Dealer + chip tray (not a seat). Top-centre; player seats ring the felt. */}
-        <div className="pointer-events-auto absolute left-1/2 top-[1.25%] z-[25] w-[min(88vw,11.75rem)] -translate-x-1/2">
+        <div className="pointer-events-auto absolute left-1/2 top-[1.25%] z-[25] w-[min(82vw,9.25rem)] -translate-x-1/2 sm:w-[min(88vw,11.75rem)]">
           <div className="rounded-md border border-amber-800/50 bg-gradient-to-b from-zinc-900/95 to-black/90 p-1.5 shadow-xl ring-1 ring-amber-900/30">
             <p className="text-center text-[6px] font-bold uppercase tracking-widest text-amber-300/90">Dealer</p>
             <div
@@ -1946,25 +1940,25 @@ export function TableRoomClient({
 
         {/* Center: pot above community cards */}
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center pt-[2%]">
-          <div className="pointer-events-auto flex max-h-[88%] max-w-[min(88%,480px)] flex-col items-center gap-3 px-2 text-center">
+          <div className="pointer-events-auto flex max-h-[88%] max-w-[min(92%,420px)] flex-col items-center gap-2 px-1.5 text-center sm:max-w-[min(88%,480px)] sm:gap-3 sm:px-2">
             <div className="pointer-events-none -mb-0.5 flex justify-center" aria-hidden>
               <div className="rotate-[-4deg] px-2 py-1.5 text-center">
                 <p className="text-[7px] font-semibold uppercase tracking-[0.34em] text-amber-200/85 sm:text-[8px] sm:tracking-[0.36em] [text-shadow:0_1px_2px_rgba(0,0,0,0.95),0_0_18px_rgba(251,191,36,0.12)]">
                   Private club
                 </p>
-                <p className="mt-1.5 text-[16px] font-black leading-none tracking-tight text-amber-50 sm:text-[19px] [text-shadow:0_1px_1px_rgba(0,0,0,0.95),0_2px_6px_rgba(0,0,0,0.65),0_0_22px_rgba(252,211,77,0.3),0_0_1px_rgba(254,252,232,0.45)]">
+                <p className="mt-1 text-[13px] font-black leading-none tracking-tight text-amber-50 sm:mt-1.5 sm:text-[16px] md:text-[19px] [text-shadow:0_1px_1px_rgba(0,0,0,0.95),0_2px_6px_rgba(0,0,0,0.65),0_0_22px_rgba(252,211,77,0.3),0_0_1px_rgba(254,252,232,0.45)]">
                   Poker-room
                 </p>
               </div>
             </div>
             {hand ? (
               <>
-                <div className="flex flex-col items-center gap-1 rounded-lg border border-red-950/50 bg-black/50 px-5 py-2 shadow-[0_8px_24px_rgba(0,0,0,0.45)] ring-1 ring-amber-500/25 backdrop-blur-md">
+                <div className="flex flex-col items-center gap-1 rounded-lg border border-red-950/50 bg-black/50 px-3 py-1.5 shadow-[0_8px_24px_rgba(0,0,0,0.45)] ring-1 ring-amber-500/25 backdrop-blur-md sm:px-5 sm:py-2">
                   <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-amber-100/90">Pot</p>
                   <MainPotChips amount={hand.pot} />
                 </div>
 
-                <div className="w-full space-y-2 rounded-xl border border-red-950/40 bg-black/40 px-4 py-3 shadow-[0_10px_28px_rgba(0,0,0,0.4)] ring-1 ring-white/10 backdrop-blur-md">
+                <div className="w-full space-y-1.5 rounded-xl border border-red-950/40 bg-black/40 px-2.5 py-2 shadow-[0_10px_28px_rgba(0,0,0,0.4)] ring-1 ring-white/10 backdrop-blur-md sm:space-y-2 sm:px-4 sm:py-3">
                   <p
                     className={`text-[9px] font-semibold uppercase tracking-widest ${
                       hand.street === "SHOWDOWN" ? "text-amber-200" : "text-amber-100/90"
@@ -1976,7 +1970,7 @@ export function TableRoomClient({
                         ? "Showdown"
                         : hand.street.replace("_", " ")}
                   </p>
-                  <div className="flex min-h-[2.75rem] flex-wrap justify-center gap-2">
+                  <div className="flex min-h-[2.25rem] flex-wrap justify-center gap-1.5 sm:min-h-[2.75rem] sm:gap-2">
                     {hand.board.length === 0 ? (
                       <span className="self-center text-[11px] text-amber-100/75">Preflop</span>
                     ) : (
@@ -2117,7 +2111,7 @@ export function TableRoomClient({
       ) : null}
 
       {showActionDock && hand && myHandPlayer ? (
-        <div className="pointer-events-auto fixed bottom-3 right-3 z-[110] w-[min(calc(100vw-1rem),15.5rem)] rounded-xl border border-zinc-800 bg-black/93 p-2.5 shadow-2xl shadow-black/60 backdrop-blur-md">
+        <div className="pointer-events-auto fixed bottom-2 left-2 right-2 z-[110] w-auto max-w-none rounded-xl border border-zinc-800 bg-black/93 p-2 shadow-2xl shadow-black/60 backdrop-blur-md pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:bottom-3 sm:left-auto sm:right-3 sm:w-[min(calc(100vw-1rem),15.5rem)] sm:p-2.5">
           <p className="text-center text-[9px] font-semibold uppercase tracking-widest text-zinc-500">Your action</p>
           <TableActionPanel
             hand={hand}

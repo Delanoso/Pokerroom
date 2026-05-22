@@ -42,16 +42,16 @@ export function PokerChrome({
       />
 
       <header className="relative z-20 border-b border-amber-900/25 bg-black/50 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3.5">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-2 py-2.5 sm:px-4 sm:py-3.5">
           <Link href="/" className="group flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-amber-500/40 bg-gradient-to-br from-red-800 via-red-950 to-zinc-950 text-lg shadow-lg shadow-red-950/50">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-amber-500/40 bg-gradient-to-br from-red-800 via-red-950 to-zinc-950 text-base shadow-lg shadow-red-950/50 sm:h-10 sm:w-10 sm:text-lg">
               <span className="text-amber-100 drop-shadow" aria-hidden>
                 ♠
               </span>
             </span>
             <div className="flex flex-col leading-tight">
               <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-amber-500/95">Private club</span>
-              <span className="text-xl font-bold tracking-tight text-zinc-50 group-hover:text-amber-50">
+              <span className="text-lg font-bold tracking-tight text-zinc-50 group-hover:text-amber-50 sm:text-xl">
                 Poker-room
               </span>
             </div>
