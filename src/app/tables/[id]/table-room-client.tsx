@@ -16,6 +16,7 @@ import {
   betChipsTowardCenterStyle,
   dealerButtonStyle,
   seatLayoutStyle,
+  type TableLayoutMode,
 } from "@/lib/poker/table-seat-layout";
 import {
   playAllInSound,
@@ -573,10 +574,19 @@ export function TableRoomClient({
   const statsTrackerRef = useRef(new PlayerSessionStatsTracker());
   const [sessionStats, setSessionStats] = useState<Map<string, SessionStatCounts>>(new Map());
   const [mySeatIndex, setMySeatIndex] = useState(initial.mySeatIndex);
+  const [portraitLayout, setPortraitLayout] = useState(false);
 
   useEffect(() => {
     if (mySeatIndex !== null) claimTablePlayTab(tableId);
   }, [tableId, mySeatIndex]);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    const apply = () => setPortraitLayout(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
   const [viewerCanDeal, setViewerCanDeal] = useState(initial.viewerCanDeal);
   const [isSiteAdmin, setIsSiteAdmin] = useState(initial.isSiteAdmin);
   const [tournament, setTournament] = useState<TournamentViewerSnapshot | null>(initial.tournament);
@@ -1291,6 +1301,10 @@ export function TableRoomClient({
     };
   }, [restoreVisibleCards]);
 
+  const tableLayout: TableLayoutMode =
+    portraitLayout && mySeatIndex !== null ? "portrait" : "desktop";
+  const seatLayoutOpts = { mode: tableLayout, heroSeatIndex: mySeatIndex };
+
   return (
     <div className={`flex min-h-0 flex-1 flex-col gap-1 overflow-hidden ${className}`.trim()}>
       <header
@@ -1605,16 +1619,20 @@ export function TableRoomClient({
         <div className="relative mt-1 flex min-h-0 w-full flex-col items-stretch justify-center overflow-visible rounded-[1.75rem] sm:mt-4 sm:rounded-[2.25rem]">
         {/* Wood floor (full bleed), then rug on top; object-contain letterboxing shows wood */}
         <div
-          className="pointer-events-none absolute inset-0 overflow-hidden rounded-[2.25rem] shadow-[inset_0_0_50px_rgba(0,0,0,0.35)]"
+          className="pointer-events-none absolute inset-0 overflow-hidden rounded-[1.75rem] shadow-[inset_0_0_50px_rgba(0,0,0,0.35)] sm:rounded-[2.25rem]"
           aria-hidden
         >
+          <div
+            className="absolute inset-0 z-0 bg-gradient-to-b from-[#1c1410] via-[#120c09] to-[#080605] sm:hidden"
+            aria-hidden
+          />
           <img
             src="/images/table-room-wood-bg.png"
             alt=""
             decoding="async"
             fetchPriority="low"
             draggable={false}
-            className="pointer-events-none absolute inset-0 z-0 h-full w-full select-none object-cover object-center"
+            className="pointer-events-none absolute inset-0 z-0 hidden h-full w-full select-none object-cover object-center sm:block"
           />
           <img
             src="/images/table-surround-rug.webp"
@@ -1624,7 +1642,7 @@ export function TableRoomClient({
             decoding="async"
             fetchPriority="low"
             draggable={false}
-            className="table-room-rug-img pointer-events-none absolute left-1/2 top-1/2 z-[1] max-h-none max-w-none select-none object-contain object-center contrast-[1.04]"
+            className="table-room-rug-img pointer-events-none absolute left-1/2 top-1/2 z-[1] hidden max-h-none max-w-none select-none object-contain object-center contrast-[1.04] sm:block"
             style={{
               width: "clamp(320px, min(96vmin, 98dvh), min(4200px, 140vw))",
               height: "clamp(880px, max(100vw, 280vw), 5600px)",
@@ -1638,7 +1656,13 @@ export function TableRoomClient({
           />
         </div>
         {/* Oval table — explicit min/max size; rail+felt use % insets so they cannot flex-collapse to 0 */}
-        <div className="relative z-10 mx-auto h-[min(58dvh,460px)] w-[min(100vw,calc(2.12*min(58dvh,460px)))] min-w-0 shrink-0 select-none overflow-visible sm:h-[min(78dvh,800px)] sm:w-[min(100vw,calc(2.12*min(78dvh,800px)))]">
+        <div
+          className={`relative z-10 mx-auto min-w-0 shrink-0 select-none overflow-visible ${
+            portraitLayout
+              ? "h-[min(50dvh,440px)] w-[min(94vw,400px)]"
+              : "h-[min(58dvh,460px)] w-[min(100vw,calc(2.12*min(58dvh,460px)))] sm:h-[min(78dvh,800px)] sm:w-[min(100vw,calc(2.12*min(78dvh,800px)))]"
+          }`}
+        >
         {/* Padded leather rail + red felt */}
         <div
           className="pointer-events-none absolute inset-[1.25%] rounded-[50%] p-[1.75%] shadow-[0_28px_56px_rgba(0,0,0,0.62)]"
@@ -1690,7 +1714,7 @@ export function TableRoomClient({
         {hand && hand.street !== "COMPLETE" ? (
           <div
             className="pointer-events-none absolute z-[28]"
-            style={dealerButtonStyle(hand.buttonSeat, table.maxSeats)}
+            style={dealerButtonStyle(hand.buttonSeat, table.maxSeats, seatLayoutOpts)}
           >
             <div
               className="flex h-4 w-4 items-center justify-center rounded-full border-2 border-amber-700 bg-gradient-to-b from-amber-50 to-amber-300 text-[8px] font-black text-black shadow-[0_2px_6px_rgba(0,0,0,0.55)] ring-2 ring-white/30 sm:h-5 sm:w-5 sm:text-[9px]"
@@ -1712,7 +1736,7 @@ export function TableRoomClient({
                 <div
                   key={`felt-bet-${hp.seatIndex}`}
                   className="absolute"
-                  style={betChipsTowardCenterStyle(hp.seatIndex, table.maxSeats)}
+                  style={betChipsTowardCenterStyle(hp.seatIndex, table.maxSeats, seatLayoutOpts)}
                 >
                   <BetChipsVisual amount={hp.streetCommit} />
                 </div>
@@ -1722,7 +1746,7 @@ export function TableRoomClient({
         ) : null}
 
         {/* Seats */}
-        <div className="absolute inset-0 z-20 max-sm:origin-center max-sm:scale-[0.93]">
+        <div className="absolute inset-0 z-20">
           {table.seats.map((seat) => {
             const isMe = seat.user && mySeatIndex === seat.seatIndex;
             const toActHere = hand?.toAct === seat.seatIndex && hand.street !== "COMPLETE";
@@ -1752,8 +1776,14 @@ export function TableRoomClient({
             return (
               <div
                 key={seat.seatIndex}
-                style={seatLayoutStyle(seat.seatIndex, table.maxSeats)}
-                className="z-20 flex w-[8.25rem] max-w-[36vw] flex-col items-stretch sm:w-[11.5rem] sm:max-w-[42vw] md:max-w-none"
+                style={seatLayoutStyle(seat.seatIndex, table.maxSeats, seatLayoutOpts)}
+                className={`z-20 flex flex-col items-stretch ${
+                  portraitLayout
+                    ? isMe
+                      ? "w-[9.5rem] max-w-[52vw]"
+                      : "w-[7rem] max-w-[32vw]"
+                    : "w-[8.25rem] max-w-[36vw] sm:w-[11.5rem] sm:max-w-[42vw] md:max-w-none"
+                }`}
               >
                 {oppShowHole && hp && holeCardsReady(hp.hole) ? (
                   <div className="mb-1 flex flex-col items-center gap-1 drop-shadow-md pointer-events-none">
@@ -1898,7 +1928,13 @@ export function TableRoomClient({
         </div>
 
         {/* Dealer + chip tray (not a seat). Top-centre; player seats ring the felt. */}
-        <div className="pointer-events-auto absolute left-1/2 top-[1.25%] z-[25] w-[min(82vw,9.25rem)] -translate-x-1/2 sm:w-[min(88vw,11.75rem)]">
+        <div
+          className={`pointer-events-auto z-[25] ${
+            portraitLayout
+              ? "absolute right-[3%] top-[2%] w-[min(28vw,5.5rem)]"
+              : "absolute left-1/2 top-[1.25%] w-[min(82vw,9.25rem)] -translate-x-1/2 sm:w-[min(88vw,11.75rem)]"
+          }`}
+        >
           <div className="rounded-md border border-amber-800/50 bg-gradient-to-b from-zinc-900/95 to-black/90 p-1.5 shadow-xl ring-1 ring-amber-900/30">
             <p className="text-center text-[6px] font-bold uppercase tracking-widest text-amber-300/90">Dealer</p>
             <div
@@ -1941,7 +1977,7 @@ export function TableRoomClient({
         {/* Center: pot above community cards */}
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center pt-[2%]">
           <div className="pointer-events-auto flex max-h-[88%] max-w-[min(92%,420px)] flex-col items-center gap-2 px-1.5 text-center sm:max-w-[min(88%,480px)] sm:gap-3 sm:px-2">
-            <div className="pointer-events-none -mb-0.5 flex justify-center" aria-hidden>
+            <div className="pointer-events-none -mb-0.5 hidden justify-center sm:flex" aria-hidden>
               <div className="rotate-[-4deg] px-2 py-1.5 text-center">
                 <p className="text-[7px] font-semibold uppercase tracking-[0.34em] text-amber-200/85 sm:text-[8px] sm:tracking-[0.36em] [text-shadow:0_1px_2px_rgba(0,0,0,0.95),0_0_18px_rgba(251,191,36,0.12)]">
                   Private club

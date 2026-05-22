@@ -6,6 +6,14 @@ const TOP_GAP_DEG = 68;
 const RX_PCT = 44;
 const RY_PCT = 40;
 
+export type TableLayoutMode = "desktop" | "portrait";
+
+export type SeatLayoutOptions = {
+  mode?: TableLayoutMode;
+  /** When portrait, this seat is anchored at the bottom (your seat). */
+  heroSeatIndex?: number | null;
+};
+
 export type SeatPositionPct = { left: number; top: number };
 
 /**
@@ -29,8 +37,56 @@ export function seatPositionPercent(seatIndex: number, maxSeats: number): SeatPo
   return { left, top };
 }
 
-export function seatLayoutStyle(seatIndex: number, maxSeats: number): CSSProperties {
-  const { left, top } = seatPositionPercent(seatIndex, maxSeats);
+/**
+ * Portrait phone layout: hero at bottom centre, opponents on the upper arc
+ * (no rotation required — matches how most mobile poker apps feel).
+ */
+export function seatPositionPortrait(
+  seatIndex: number,
+  maxSeats: number,
+  heroSeatIndex: number | null,
+): SeatPositionPct {
+  const n = Math.max(2, Math.min(9, Math.floor(maxSeats)));
+  const hero = heroSeatIndex ?? 0;
+  const rel = ((seatIndex - hero) % n + n) % n;
+
+  if (rel === 0) {
+    return { left: 50, top: 86 };
+  }
+
+  const oppCount = n - 1;
+  const oppIdx = rel - 1;
+  const arcStart = 200;
+  const arcEnd = 340;
+  const angleDeg = arcStart + ((oppIdx + 0.5) / oppCount) * (arcEnd - arcStart);
+  const rad = (angleDeg * Math.PI) / 180;
+  const cx = 50;
+  const cy = 36;
+  const rx = 42;
+  const ry = 30;
+  return {
+    left: cx + rx * Math.sin(rad),
+    top: cy - ry * Math.cos(rad),
+  };
+}
+
+function resolveSeatPosition(
+  seatIndex: number,
+  maxSeats: number,
+  options?: SeatLayoutOptions,
+): SeatPositionPct {
+  if (options?.mode === "portrait") {
+    return seatPositionPortrait(seatIndex, maxSeats, options.heroSeatIndex ?? null);
+  }
+  return seatPositionPercent(seatIndex, maxSeats);
+}
+
+export function seatLayoutStyle(
+  seatIndex: number,
+  maxSeats: number,
+  options?: SeatLayoutOptions,
+): CSSProperties {
+  const { left, top } = resolveSeatPosition(seatIndex, maxSeats, options);
   return {
     position: "absolute",
     left: `${left}%`,
@@ -40,18 +96,26 @@ export function seatLayoutStyle(seatIndex: number, maxSeats: number): CSSPropert
 }
 
 /** Dealer button disc — between the button seat and table centre. */
-export function dealerButtonStyle(buttonSeat: number, maxSeats: number, t = 0.45): CSSProperties {
-  const seat = seatPositionPercent(buttonSeat, maxSeats);
+export function dealerButtonStyle(
+  buttonSeat: number,
+  maxSeats: number,
+  options?: SeatLayoutOptions & { t?: number },
+): CSSProperties {
+  const t = options?.t ?? 0.45;
+  const seat = resolveSeatPosition(buttonSeat, maxSeats, options);
   let left = seat.left + (50 - seat.left) * t;
   let top = seat.top + (50 - seat.top) * t;
 
-  // Pull toward the seat so the disc does not sit on the community cards (river is right of centre).
   const towardSeat = seat.left > 54 ? 0.38 : 0.2;
   left += (seat.left - left) * towardSeat;
   top += (seat.top - top) * towardSeat;
 
   if (seat.left > 54) {
     top -= 3;
+  }
+
+  if (options?.mode === "portrait") {
+    top = Math.min(top, 72);
   }
 
   return {
@@ -66,18 +130,25 @@ export function dealerButtonStyle(buttonSeat: number, maxSeats: number, t = 0.45
 export function betChipsTowardCenterStyle(
   seatIndex: number,
   maxSeats: number,
-  t = 0.3,
+  options?: SeatLayoutOptions & { t?: number },
 ): CSSProperties {
-  const base = lerpSeatTowardCenter(seatIndex, maxSeats, t);
+  const t = options?.t ?? 0.3;
+  const base = lerpSeatTowardCenter(seatIndex, maxSeats, t, options);
   return { ...base, transform: "translate(-50%, -100%)" };
 }
 
-function lerpSeatTowardCenter(seatIndex: number, maxSeats: number, t: number): CSSProperties {
-  const { left, top } = seatPositionPercent(seatIndex, maxSeats);
+function lerpSeatTowardCenter(
+  seatIndex: number,
+  maxSeats: number,
+  t: number,
+  options?: SeatLayoutOptions,
+): CSSProperties {
+  const { left, top } = resolveSeatPosition(seatIndex, maxSeats, options);
+  const centerTop = options?.mode === "portrait" ? 44 : 50;
   return {
     position: "absolute",
     left: `${left + (50 - left) * t}%`,
-    top: `${top + (50 - top) * t}%`,
+    top: `${top + (centerTop - top) * t}%`,
     transform: "translate(-50%, -50%)",
   };
 }
