@@ -1,0 +1,1 @@
+-- SQLite stores PokerTableKind as TEXT; new value SIT_AND_GO requires no column change.

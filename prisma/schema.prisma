@@ -1,0 +1,320 @@
+// PostgreSQL (local: docker compose up -d). Apply schema: npx prisma db push
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum LedgerEntryType {
+  ADMIN_ADJUSTMENT
+  TABLE_BUY_IN
+  TABLE_CASH_OUT
+  /** Bankroll → seated stack between hands (add chips). */
+  TABLE_STACK_RELOAD
+  /** Host receives small-blind tip from a player’s table stack. */
+  DEALER_TIP_RECEIVED
+  /** Cash pot rake credited to the table host after a raked hand completes. */
+  HOUSE_RAKE_CASH_POT
+  /** Player paid a tournament entry fee from bankroll (paired host credit when applicable). */
+  TOURNAMENT_ENTRY_FEE_PAID
+  /** Host receives tournament entry fee from a player’s bankroll. */
+  TOURNAMENT_FEE_RECEIVED
+  /** Player receives a tournament place prize (Zar). */
+  TOURNAMENT_PRIZE_PAID
+  /** Host / operator pays out a tournament place prize (Zar). */
+  TOURNAMENT_PRIZE_EXPENSE
+  /** Approved cash-out; negative amount removes chips from the player ledger. */
+  WITHDRAWAL_PAYOUT
+  /** Approved deposit; positive amount credits the player ledger. */
+  DEPOSIT_CREDIT
+}
+
+enum TournamentFlightStatus {
+  SCHEDULED
+  RUNNING
+  COMPLETED
+  CANCELLED
+}
+
+enum WithdrawalRequestStatus {
+  PENDING
+  APPROVED
+  DECLINED
+}
+
+enum PokerTableKind {
+  CASH
+  TOURNAMENT
+  /** Cash buy-in from bankroll; fixed admin chip stack; auto-starts when all seats are taken. */
+  SIT_AND_GO
+}
+
+enum TournamentListingVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+model User {
+  id           String   @id @default(cuid())
+  firstName    String
+  lastName     String
+  username     String   @unique
+  /** Shown at tables; login still uses lowercase `username`. */
+  displayUsername String?
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(USER)
+  /** Playtest / fleet bot account (managed from operator console). */
+  isBot        Boolean  @default(false)
+  /** When set, the account cannot sign in or call player APIs until cleared. */
+  blockedAt    DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  ledgerEntries   LedgerEntry[] @relation("UserLedger")
+  adjustmentsMade LedgerEntry[] @relation("AdjustmentAdmin")
+  tablesCreated   PokerTable[]  @relation("TablesCreated")
+  tableSeats      TableSeat[]
+  tournamentInvites        TournamentInvite[]
+  tournamentRegistrations TournamentRegistration[]
+  tournamentGroupRegistrations TournamentGroupRegistration[]
+  tournamentPlacements     TournamentPlacement[]
+  withdrawalRequests        WithdrawalRequest[] @relation("UserWithdrawals")
+  withdrawalsResolved       WithdrawalRequest[] @relation("WithdrawalResolvedBy")
+  depositRequests           DepositRequest[] @relation("UserDeposits")
+  depositsResolved          DepositRequest[] @relation("DepositsResolvedBy")
+}
+
+model LedgerEntry {
+  id          String          @id @default(cuid())
+  userId      String
+  user        User            @relation("UserLedger", fields: [userId], references: [id], onDelete: Cascade)
+  amountChips Int
+  type        LedgerEntryType
+  note        String?
+  createdById String?
+  createdBy   User?           @relation("AdjustmentAdmin", fields: [createdById], references: [id])
+  createdAt   DateTime        @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model WithdrawalRequest {
+  id             String                   @id @default(cuid())
+  userId         String
+  user           User                     @relation("UserWithdrawals", fields: [userId], references: [id], onDelete: Cascade)
+  amountChips    Int
+  status         WithdrawalRequestStatus  @default(PENDING)
+  resolvedAt     DateTime?
+  resolvedById   String?
+  resolvedBy     User?                    @relation("WithdrawalResolvedBy", fields: [resolvedById], references: [id])
+  createdAt      DateTime                 @default(now())
+
+  @@index([userId, status])
+  @@index([status, createdAt])
+}
+
+model DepositRequest {
+  id             String                   @id @default(cuid())
+  userId         String
+  user           User                     @relation("UserDeposits", fields: [userId], references: [id], onDelete: Cascade)
+  amountChips    Int
+  status         WithdrawalRequestStatus  @default(PENDING)
+  resolvedAt     DateTime?
+  resolvedById   String?
+  resolvedBy     User?                    @relation("DepositsResolvedBy", fields: [resolvedById], references: [id])
+  createdAt      DateTime                 @default(now())
+
+  @@index([userId, status])
+  @@index([status, createdAt])
+}
+
+model PokerTable {
+  id               String         @id @default(cuid())
+  name             String
+  kind             PokerTableKind @default(CASH)
+  /** For tournaments: first allowed deal time (UTC). Null for cash tables. */
+  startsAt         DateTime?
+  /** Tournaments only: who may see the table in the lobby. Null = public (cash ignores). */
+  tournamentListingVisibility TournamentListingVisibility?
+  smallBlind       Int
+  bigBlind         Int
+  maxSeats         Int
+  minBuyIn         Int
+  maxBuyIn         Int
+  /** Cash games only: rake as basis points (100 = 1%). 0 disables pot rake. */
+  rakePercentBps   Int            @default(0)
+  /** Cash games only: max rake chips per pot; 0 = uncapped (percent only). */
+  rakeCapChips     Int            @default(0)
+  /** Tournaments only: registration fee (Zar) charged at register from bankroll. */
+  tournamentEntryFeeChips Int     @default(0)
+  /** Tournaments only: starting stack (play chips) when player sits — same for all entrants. */
+  tournamentStartingStackChips Int @default(0)
+  /** Tournaments only: place prizes in Zar (paid from house/operator budget). */
+  tournamentPrize1stZar Int       @default(0)
+  tournamentPrize2ndZar Int       @default(0)
+  tournamentPrize3rdZar Int       @default(0)
+  /** Tournaments only: flight is cancelled if fewer players register before start. */
+  tournamentMinPlayersToStart Int @default(2)
+  /** Tournaments only: when true, SB/BB increase on a timer after the flight starts. */
+  tournamentEscalatingBlinds Boolean @default(false)
+  /** Minutes per blind level (level 1 begins when the flight goes RUNNING). */
+  tournamentBlindLevelMinutes Int @default(10)
+  /** Basis points multiplier applied each level (20000 = double). */
+  tournamentBlindLevelMultiplierBps Int @default(20000)
+  /** Current blind level (1 = starting blinds). Kept in sync across group tables. */
+  tournamentBlindLevel Int @default(1)
+  /** When the current level ends and blinds may increase (UTC). */
+  tournamentBlindLevelEndsAt DateTime?
+  /** Level-1 blinds captured at flight start; 0 means use `smallBlind` / `bigBlind`. */
+  tournamentBlindBaseSmallBlind Int @default(0)
+  tournamentBlindBaseBigBlind Int @default(0)
+  tournamentFlightStatus      TournamentFlightStatus?
+  dealerButtonSeat Int            @default(0)
+  /** When set, table is closed: no joins, no new hands; seats cleared by operator close. */
+  closedAt         DateTime?
+  /** Multi-table MTT: same id on every table in the flight; registration is capped across the group. */
+  tournamentGroupId String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  createdById      String
+  createdBy        User           @relation("TablesCreated", fields: [createdById], references: [id])
+
+  seats TableSeat[]
+  hands TableHand[]
+  tournamentInvites       TournamentInvite[]
+  tournamentRegistrations TournamentRegistration[]
+
+  @@index([tournamentGroupId])
+}
+
+model TournamentGroupRegistration {
+  id        String   @id @default(cuid())
+  groupId   String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([groupId, userId])
+  @@index([groupId])
+  @@index([userId])
+}
+
+/** Bust order within a flight (group id or lone table id). Higher bustOrder = finished later (closer to 1st). */
+model TournamentElimination {
+  id        String   @id @default(cuid())
+  flightKey String
+  userId    String
+  bustOrder Int
+  createdAt DateTime @default(now())
+
+  @@unique([flightKey, userId])
+  @@index([flightKey, bustOrder])
+}
+
+/** Completed or cancelled tournament snapshot for operator records. */
+model TournamentFlightArchive {
+  id                String                 @id @default(cuid())
+  flightKey         String                 @unique
+  anchorTableId     String
+  tableName         String
+  hostUserId        String
+  entryFeeZar       Int                    @default(0)
+  prize1stZar       Int                    @default(0)
+  prize2ndZar       Int                    @default(0)
+  prize3rdZar       Int                    @default(0)
+  registrationCount Int                    @default(0)
+  status            TournamentFlightStatus
+  completedAt       DateTime               @default(now())
+
+  placements TournamentPlacement[]
+
+  @@index([completedAt])
+  @@index([status])
+}
+
+/** Finish positions 1–5 per flight (prize places 1–3 may have paidAt when paid out). */
+model TournamentPlacement {
+  id        String   @id @default(cuid())
+  archiveId String?
+  archive   TournamentFlightArchive? @relation(fields: [archiveId], references: [id], onDelete: SetNull)
+  flightKey String
+  place     Int
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prizeZar  Int      @default(0)
+  paidAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@unique([flightKey, place])
+  @@index([archiveId])
+  @@index([flightKey])
+}
+
+model TournamentInvite {
+  id        String   @id @default(cuid())
+  tableId   String
+  table     PokerTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([tableId, userId])
+  @@index([tableId])
+  @@index([userId])
+}
+
+model TournamentRegistration {
+  id        String   @id @default(cuid())
+  tableId   String
+  table     PokerTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([tableId, userId])
+  @@index([tableId])
+  @@index([userId])
+}
+
+model TableHand {
+  id         String     @id @default(cuid())
+  tableId    String
+  table      PokerTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  complete   Boolean    @default(false)
+  stateJson  String
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@index([tableId, complete])
+}
+
+model TableSeat {
+  id         String     @id @default(cuid())
+  tableId    String
+  table      PokerTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  seatIndex  Int
+  userId     String?
+  user       User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  stackChips Int        @default(0)
+  /** Cash: not dealt next hands while true; stack stays at seat. */
+  sittingOut Boolean    @default(false)
+  /** When sittingOut became true (cash long sit-out removal uses this). */
+  sitOutSince DateTime?
+  /** Cash: after current hand ends, become sittingOut. */
+  sitOutNextHand Boolean @default(false)
+  /** Seated during an active hand; cleared when that hand completes, then dealt next hand. */
+  waitingForNextHand Boolean @default(false)
+  /** Cash: consecutive hands with clock timeout and no manual action (>=3 → auto sittingOut). */
+  consecutiveIdleHands Int @default(0)
+
+  @@unique([tableId, seatIndex])
+}
