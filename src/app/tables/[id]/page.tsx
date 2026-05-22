@@ -7,7 +7,6 @@ import { getAvailableChipBalance } from "@/lib/wallet";
 import { LOBBY_WINDOW_TARGET } from "@/lib/poker/open-table-window";
 import { notFound, redirect } from "next/navigation";
 import { isUserEliminatedFromSitAndGo } from "@/lib/poker/sit-and-go-sync";
-import { TablePagePortraitShell } from "@/components/table-page-portrait-shell";
 import { TableRoomClient, type TableRoomInitial } from "./table-room-client";
 import { PokerTableKind } from "@prisma/client";
 
@@ -133,35 +132,33 @@ export default async function TablePage({ params }: Props) {
   };
 
   return (
-    <TablePagePortraitShell>
-      <div
-        className="flex h-dvh max-h-dvh w-full flex-col overflow-hidden px-0.5 py-0.5 shadow-[inset_0_0_80px_rgba(0,0,0,0.5)] sm:px-1"
-        style={{
-          backgroundColor: "#120c09",
-          backgroundImage: [
-            "linear-gradient(180deg, rgba(0,0,0,0.42) 0%, transparent 40%, rgba(0,0,0,0.35) 100%)",
-            "url(/images/table-room-wood-bg.png)",
-          ].join(","),
-          backgroundSize: "auto, cover",
-          backgroundPosition: "center, center",
-          backgroundRepeat: "no-repeat, no-repeat",
-        }}
-      >
-        <div className="mx-auto flex h-full min-h-0 w-full max-w-6xl flex-col">
-          <div className="flex shrink-0 items-center justify-between gap-2">
-            <a
-              href="/tables"
-              target={LOBBY_WINDOW_TARGET}
-              rel="noopener noreferrer"
-              className="py-0.5 text-[10px] leading-none text-amber-200/90 hover:text-amber-100"
-            >
-              ← Tables (lobby)
-            </a>
-            <SignOutButton className="rounded border border-zinc-600 px-2 py-0.5 text-[10px] text-zinc-300 hover:border-zinc-500 hover:text-zinc-100" />
-          </div>
-          <TableRoomClient className="min-h-0 flex-1" tableId={id} initial={initial} />
+    <div
+      className="flex h-dvh max-h-dvh flex-col overflow-hidden px-0.5 py-0.5 shadow-[inset_0_0_80px_rgba(0,0,0,0.5)] sm:px-1"
+      style={{
+        backgroundColor: "#120c09",
+        backgroundImage: [
+          "linear-gradient(180deg, rgba(0,0,0,0.42) 0%, transparent 40%, rgba(0,0,0,0.35) 100%)",
+          "url(/images/table-room-wood-bg.png)",
+        ].join(","),
+        backgroundSize: "auto, cover",
+        backgroundPosition: "center, center",
+        backgroundRepeat: "no-repeat, no-repeat",
+      }}
+    >
+      <div className="mx-auto flex h-full min-h-0 w-full max-w-6xl flex-col">
+        <div className="flex shrink-0 items-center justify-between gap-2">
+          <a
+            href="/tables"
+            target={LOBBY_WINDOW_TARGET}
+            rel="noopener noreferrer"
+            className="py-0.5 text-[10px] leading-none text-amber-200/90 hover:text-amber-100"
+          >
+            ← Tables (lobby)
+          </a>
+          <SignOutButton className="rounded border border-zinc-600 px-2 py-0.5 text-[10px] text-zinc-300 hover:border-zinc-500 hover:text-zinc-100" />
         </div>
+        <TableRoomClient className="min-h-0 flex-1" tableId={id} initial={initial} />
       </div>
-    </TablePagePortraitShell>
+    </div>
   );
 }
