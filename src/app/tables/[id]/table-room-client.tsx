@@ -1709,8 +1709,8 @@ export function TableRoomClient({
           style={
             showLandscapeInPortrait
               ? {
-                  width: "100dvh",
-                  height: "100dvw",
+                  width: "100dvw",
+                  height: "100dvh",
                   transform: `translate(-50%, -50%) rotate(90deg) scale(${rotateScale})`,
                   transformOrigin: "center center",
                 }
@@ -1767,7 +1767,7 @@ export function TableRoomClient({
         <div
           className={`relative z-10 mx-auto min-w-0 shrink-0 select-none overflow-visible ${
             showLandscapeInPortrait
-              ? "h-[min(72dvh,620px)] w-[min(calc(2.12*min(72dvh,620px)),96dvw,1200px)]"
+              ? "w-[min(72dvw,400px)] h-[min(calc(2.12*min(72dvw,400px)),96dvh,1200px)]"
               : fitLaptopTableInPortrait
                 ? "h-full w-full"
                 : "h-[min(58dvh,460px)] w-[min(100vw,calc(2.12*min(58dvh,460px)))] sm:h-[min(78dvh,800px)] sm:w-[min(100vw,calc(2.12*min(78dvh,800px)))]"
