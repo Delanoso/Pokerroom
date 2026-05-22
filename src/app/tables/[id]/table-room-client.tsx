@@ -1711,7 +1711,7 @@ export function TableRoomClient({
               ? {
                   width: "100dvh",
                   height: "100dvw",
-                  transform: `translate(-50%, -50%) rotate(90deg) scale(${rotateScale})`,
+                  transform: `translate(-50%, -50%) rotate(180deg) scale(${rotateScale})`,
                   transformOrigin: "center center",
                 }
               : fitLaptopTableInPortrait && laptopTableSize.width > 0
