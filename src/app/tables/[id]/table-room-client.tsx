@@ -16,7 +16,6 @@ import {
   betChipsTowardCenterStyle,
   dealerButtonStyle,
   seatLayoutStyle,
-  type SeatLayoutOptions,
 } from "@/lib/poker/table-seat-layout";
 import {
   playAllInSound,
@@ -574,21 +573,9 @@ export function TableRoomClient({
   const statsTrackerRef = useRef(new PlayerSessionStatsTracker());
   const [sessionStats, setSessionStats] = useState<Map<string, SessionStatCounts>>(new Map());
   const [mySeatIndex, setMySeatIndex] = useState(initial.mySeatIndex);
-  const [mobileCompactLayout, setMobileCompactLayout] = useState(false);
-
   useEffect(() => {
     if (mySeatIndex !== null) claimTablePlayTab(tableId);
   }, [tableId, mySeatIndex]);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 639px)");
-    const apply = () => setMobileCompactLayout(mq.matches);
-    apply();
-    mq.addEventListener("change", apply);
-    return () => mq.removeEventListener("change", apply);
-  }, []);
-
-  const seatLayoutOpts: SeatLayoutOptions = { compact: mobileCompactLayout };
 
   const [viewerCanDeal, setViewerCanDeal] = useState(initial.viewerCanDeal);
   const [isSiteAdmin, setIsSiteAdmin] = useState(initial.isSiteAdmin);
@@ -1652,7 +1639,11 @@ export function TableRoomClient({
         </div>
         {/* Oval table — explicit min/max size; rail+felt use % insets so they cannot flex-collapse to 0 */}
         <div
-          className="relative z-10 mx-auto min-w-0 shrink-0 select-none overflow-visible w-[88vw] h-[calc(88vw/2.12)] max-h-[min(56dvh,460px)] sm:min-h-[min(78dvh,800px)] sm:h-[min(78dvh,800px)] sm:w-[min(100vw,calc(2.12*min(78dvh,800px)))] sm:max-h-none"
+          className="relative z-10 mx-auto min-h-[min(78dvh,800px)] w-full min-w-0 shrink-0 select-none overflow-visible"
+          style={{
+            height: "min(78dvh, 800px)",
+            width: "min(100vw, calc(2.12 * min(78dvh, 800px)))",
+          }}
         >
         {/* Padded leather rail + red felt */}
         <div
@@ -1705,7 +1696,7 @@ export function TableRoomClient({
         {hand && hand.street !== "COMPLETE" ? (
           <div
             className="pointer-events-none absolute z-[28]"
-            style={dealerButtonStyle(hand.buttonSeat, table.maxSeats, seatLayoutOpts)}
+            style={dealerButtonStyle(hand.buttonSeat, table.maxSeats)}
           >
             <div
               className="flex h-4 w-4 items-center justify-center rounded-full border-2 border-amber-700 bg-gradient-to-b from-amber-50 to-amber-300 text-[8px] font-black text-black shadow-[0_2px_6px_rgba(0,0,0,0.55)] ring-2 ring-white/30 sm:h-5 sm:w-5 sm:text-[9px]"
@@ -1727,7 +1718,7 @@ export function TableRoomClient({
                 <div
                   key={`felt-bet-${hp.seatIndex}`}
                   className="absolute"
-                  style={betChipsTowardCenterStyle(hp.seatIndex, table.maxSeats, seatLayoutOpts)}
+                  style={betChipsTowardCenterStyle(hp.seatIndex, table.maxSeats)}
                 >
                   <BetChipsVisual amount={hp.streetCommit} />
                 </div>
@@ -1767,8 +1758,8 @@ export function TableRoomClient({
             return (
               <div
                 key={seat.seatIndex}
-                style={seatLayoutStyle(seat.seatIndex, table.maxSeats, seatLayoutOpts)}
-                className="z-20 flex w-[8.5rem] max-w-[32vw] flex-col items-stretch sm:w-[11.5rem] sm:max-w-none"
+                style={seatLayoutStyle(seat.seatIndex, table.maxSeats)}
+                className="z-20 flex w-[11.5rem] max-w-[42vw] flex-col items-stretch sm:max-w-none"
               >
                 {oppShowHole && hp && holeCardsReady(hp.hole) ? (
                   <div className="mb-1 flex flex-col items-center gap-1 drop-shadow-md pointer-events-none">

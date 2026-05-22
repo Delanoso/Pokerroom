@@ -12,8 +12,6 @@ export type SeatLayoutOptions = {
   mode?: TableLayoutMode;
   /** When portrait, this seat is anchored at the bottom (your seat). */
   heroSeatIndex?: number | null;
-  /** Narrow screens: pull side seats slightly toward centre. */
-  compact?: boolean;
 };
 
 export type SeatPositionPct = { left: number; top: number };
@@ -72,34 +70,6 @@ export function seatPositionPortrait(
   };
 }
 
-function ellipseRadii(options?: SeatLayoutOptions): { rx: number; ry: number } {
-  if (options?.compact) {
-    return { rx: 38, ry: 36 };
-  }
-  return { rx: RX_PCT, ry: RY_PCT };
-}
-
-function seatPositionPercentWithRadii(
-  seatIndex: number,
-  maxSeats: number,
-  rxPct: number,
-  ryPct: number,
-): SeatPositionPct {
-  const n = Math.max(2, Math.min(9, Math.floor(maxSeats)));
-  const idx = Math.max(0, Math.min(n - 1, seatIndex));
-
-  const arcStart = TOP_GAP_DEG / 2;
-  const arcEnd = 360 - TOP_GAP_DEG / 2;
-  const arcSpan = arcEnd - arcStart;
-  const angleDeg = arcStart + ((idx + 0.5) / n) * arcSpan;
-  const rad = (angleDeg * Math.PI) / 180;
-
-  const left = 50 + rxPct * Math.sin(rad);
-  const top = 50 - ryPct * Math.cos(rad);
-
-  return { left, top };
-}
-
 function resolveSeatPosition(
   seatIndex: number,
   maxSeats: number,
@@ -108,8 +78,7 @@ function resolveSeatPosition(
   if (options?.mode === "portrait") {
     return seatPositionPortrait(seatIndex, maxSeats, options.heroSeatIndex ?? null);
   }
-  const { rx, ry } = ellipseRadii(options);
-  return seatPositionPercentWithRadii(seatIndex, maxSeats, rx, ry);
+  return seatPositionPercent(seatIndex, maxSeats);
 }
 
 export function seatLayoutStyle(
