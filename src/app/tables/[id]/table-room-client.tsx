@@ -16,7 +16,6 @@ import {
   betChipsTowardCenterStyle,
   dealerButtonStyle,
   seatLayoutStyle,
-  type TableLayoutMode,
 } from "@/lib/poker/table-seat-layout";
 import {
   playAllInSound,
@@ -574,98 +573,10 @@ export function TableRoomClient({
   const statsTrackerRef = useRef(new PlayerSessionStatsTracker());
   const [sessionStats, setSessionStats] = useState<Map<string, SessionStatCounts>>(new Map());
   const [mySeatIndex, setMySeatIndex] = useState(initial.mySeatIndex);
-  const [isMobileViewport, setIsMobileViewport] = useState(false);
-  const [isPortraitOrientation, setIsPortraitOrientation] = useState(false);
-  const [rotateScale, setRotateScale] = useState(1);
-  const [mobileFitScale, setMobileFitScale] = useState(1);
-  const [laptopTableSize, setLaptopTableSize] = useState({ width: 0, height: 0 });
-  const tableSceneRef = useRef<HTMLDivElement>(null);
-
-  const TABLE_ASPECT = 2.12;
-  const TABLE_HEIGHT_CAP = 800;
-
   useEffect(() => {
     if (mySeatIndex !== null) claimTablePlayTab(tableId);
   }, [tableId, mySeatIndex]);
 
-  useEffect(() => {
-    const narrow = window.matchMedia("(max-width: 639px)");
-    const portrait = window.matchMedia("(orientation: portrait)");
-    const apply = () => {
-      setIsMobileViewport(narrow.matches);
-      setIsPortraitOrientation(portrait.matches);
-    };
-    apply();
-    narrow.addEventListener("change", apply);
-    portrait.addEventListener("change", apply);
-    window.addEventListener("resize", apply);
-    window.addEventListener("orientationchange", apply);
-    return () => {
-      narrow.removeEventListener("change", apply);
-      portrait.removeEventListener("change", apply);
-      window.removeEventListener("resize", apply);
-      window.removeEventListener("orientationchange", apply);
-    };
-  }, []);
-
-  const showLandscapeInPortrait = isMobileViewport && isPortraitOrientation && !embedded;
-  const fitLaptopTableInPortrait = isMobileViewport && !isPortraitOrientation && !embedded;
-
-  useEffect(() => {
-    if (!showLandscapeInPortrait) {
-      setRotateScale(1);
-      return;
-    }
-    const outer = tableSceneRef.current;
-    if (!outer) return;
-    const update = () => {
-      const w = outer.clientWidth;
-      const h = outer.clientHeight;
-      const scale = Math.min(w / window.innerHeight, h / window.innerWidth) * 0.94;
-      setRotateScale(Math.max(0.35, Math.min(1, scale)));
-    };
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(outer);
-    window.addEventListener("resize", update);
-    window.addEventListener("orientationchange", update);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener("resize", update);
-      window.removeEventListener("orientationchange", update);
-    };
-  }, [showLandscapeInPortrait]);
-
-  useEffect(() => {
-    if (!fitLaptopTableInPortrait) {
-      setMobileFitScale(1);
-      setLaptopTableSize({ width: 0, height: 0 });
-      return;
-    }
-    const outer = tableSceneRef.current;
-    if (!outer) return;
-    const update = () => {
-      const sidebarGutter = 40;
-      const availW = outer.clientWidth - sidebarGutter;
-      const availH = outer.clientHeight;
-      const nativeH = Math.min(window.innerHeight * 0.78, TABLE_HEIGHT_CAP);
-      const nativeW = Math.min(availW, nativeH * TABLE_ASPECT, 1200);
-      const nativeH2 = nativeW / TABLE_ASPECT;
-      setLaptopTableSize({ width: nativeW, height: nativeH2 });
-      const scale = Math.min(1, availW / nativeW, availH / nativeH2) * 0.98;
-      setMobileFitScale(Math.max(0.32, Math.min(1, scale)));
-    };
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(outer);
-    window.addEventListener("resize", update);
-    window.addEventListener("orientationchange", update);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener("resize", update);
-      window.removeEventListener("orientationchange", update);
-    };
-  }, [fitLaptopTableInPortrait]);
   const [viewerCanDeal, setViewerCanDeal] = useState(initial.viewerCanDeal);
   const [isSiteAdmin, setIsSiteAdmin] = useState(initial.isSiteAdmin);
   const [tournament, setTournament] = useState<TournamentViewerSnapshot | null>(initial.tournament);
@@ -1380,8 +1291,6 @@ export function TableRoomClient({
     };
   }, [restoreVisibleCards]);
 
-  const seatLayoutOpts = { mode: "desktop" as TableLayoutMode, heroSeatIndex: mySeatIndex };
-
   return (
     <div className={`flex min-h-0 flex-1 flex-col gap-1 overflow-hidden ${className}`.trim()}>
       <header
@@ -1677,7 +1586,7 @@ export function TableRoomClient({
         </div>
       ) : null}
 
-      <div ref={tableSceneRef} className="relative min-h-0 flex-1 overflow-hidden">
+      <div className="relative min-h-0 flex-1">
         <TablePlayerSidebar
           viewerUserId={viewerUserId}
           embedded={embedded}
@@ -1693,45 +1602,10 @@ export function TableRoomClient({
           logLines={tableLogLines}
           logScrollRef={tableLogScrollRef}
         />
-        <div
-          className={
-            showLandscapeInPortrait
-              ? "absolute inset-0 overflow-hidden"
-              : "relative flex h-full min-h-0 w-full items-center justify-center overflow-hidden max-sm:pl-10 sm:mt-4"
-          }
-        >
-        <div
-          className={
-            showLandscapeInPortrait
-              ? "absolute left-1/2 top-1/2 z-[5]"
-              : "relative shrink-0 overflow-visible rounded-[1.75rem] sm:rounded-[2.25rem]"
-          }
-          style={
-            showLandscapeInPortrait
-              ? {
-                  width: "100dvw",
-                  height: "100dvh",
-                  transform: `translate(-50%, -50%) rotate(90deg) scale(${rotateScale})`,
-                  transformOrigin: "center center",
-                }
-              : fitLaptopTableInPortrait && laptopTableSize.width > 0
-                ? {
-                    width: laptopTableSize.width,
-                    height: laptopTableSize.height,
-                    transform: `scale(${mobileFitScale})`,
-                    transformOrigin: "center center",
-                  }
-                : undefined
-          }
-        >
-        <div
-          className={`relative flex min-h-0 w-full flex-col items-stretch justify-center overflow-visible ${
-            showLandscapeInPortrait ? "pointer-events-auto h-full min-h-[280px]" : "h-full w-full"
-          } rounded-[1.75rem] sm:rounded-[2.25rem]`}
-        >
+        <div className="relative mt-2 flex min-h-0 w-full flex-col items-stretch justify-center overflow-visible rounded-[2.25rem] sm:mt-4">
         {/* Wood floor (full bleed), then rug on top; object-contain letterboxing shows wood */}
         <div
-          className="pointer-events-none absolute inset-0 overflow-hidden rounded-[1.75rem] shadow-[inset_0_0_50px_rgba(0,0,0,0.35)] sm:rounded-[2.25rem]"
+          className="pointer-events-none absolute inset-0 overflow-hidden rounded-[2.25rem] shadow-[inset_0_0_50px_rgba(0,0,0,0.35)]"
           aria-hidden
         >
           <img
@@ -1740,7 +1614,7 @@ export function TableRoomClient({
             decoding="async"
             fetchPriority="low"
             draggable={false}
-            className={`pointer-events-none absolute inset-0 z-0 h-full w-full select-none object-cover object-center ${showLandscapeInPortrait || fitLaptopTableInPortrait ? "block" : "hidden sm:block"}`}
+            className="pointer-events-none absolute inset-0 z-0 h-full w-full select-none object-cover object-center"
           />
           <img
             src="/images/table-surround-rug.webp"
@@ -1750,7 +1624,7 @@ export function TableRoomClient({
             decoding="async"
             fetchPriority="low"
             draggable={false}
-            className={`table-room-rug-img pointer-events-none absolute left-1/2 top-1/2 z-[1] max-h-none max-w-none select-none object-contain object-center contrast-[1.04] ${showLandscapeInPortrait || fitLaptopTableInPortrait ? "block" : "hidden sm:block"}`}
+            className="pointer-events-none absolute left-1/2 top-1/2 z-[1] max-h-none max-w-none select-none object-contain object-center contrast-[1.04]"
             style={{
               width: "clamp(320px, min(96vmin, 98dvh), min(4200px, 140vw))",
               height: "clamp(880px, max(100vw, 280vw), 5600px)",
@@ -1765,13 +1639,11 @@ export function TableRoomClient({
         </div>
         {/* Oval table — explicit min/max size; rail+felt use % insets so they cannot flex-collapse to 0 */}
         <div
-          className={`relative z-10 mx-auto min-w-0 shrink-0 select-none overflow-visible ${
-            showLandscapeInPortrait
-              ? "w-[min(72dvw,400px)] h-[min(calc(2.12*min(72dvw,400px)),96dvh,1200px)]"
-              : fitLaptopTableInPortrait
-                ? "h-full w-full"
-                : "h-[min(58dvh,460px)] w-[min(100vw,calc(2.12*min(58dvh,460px)))] sm:h-[min(78dvh,800px)] sm:w-[min(100vw,calc(2.12*min(78dvh,800px)))]"
-          }`}
+          className="relative z-10 mx-auto min-h-[min(78dvh,800px)] w-full min-w-0 shrink-0 select-none overflow-visible"
+          style={{
+            height: "min(78dvh, 800px)",
+            width: "min(100vw, calc(2.12 * min(78dvh, 800px)))",
+          }}
         >
         {/* Padded leather rail + red felt */}
         <div
@@ -1824,7 +1696,7 @@ export function TableRoomClient({
         {hand && hand.street !== "COMPLETE" ? (
           <div
             className="pointer-events-none absolute z-[28]"
-            style={dealerButtonStyle(hand.buttonSeat, table.maxSeats, seatLayoutOpts)}
+            style={dealerButtonStyle(hand.buttonSeat, table.maxSeats)}
           >
             <div
               className="flex h-4 w-4 items-center justify-center rounded-full border-2 border-amber-700 bg-gradient-to-b from-amber-50 to-amber-300 text-[8px] font-black text-black shadow-[0_2px_6px_rgba(0,0,0,0.55)] ring-2 ring-white/30 sm:h-5 sm:w-5 sm:text-[9px]"
@@ -1846,7 +1718,7 @@ export function TableRoomClient({
                 <div
                   key={`felt-bet-${hp.seatIndex}`}
                   className="absolute"
-                  style={betChipsTowardCenterStyle(hp.seatIndex, table.maxSeats, seatLayoutOpts)}
+                  style={betChipsTowardCenterStyle(hp.seatIndex, table.maxSeats)}
                 >
                   <BetChipsVisual amount={hp.streetCommit} />
                 </div>
@@ -1886,7 +1758,7 @@ export function TableRoomClient({
             return (
               <div
                 key={seat.seatIndex}
-                style={seatLayoutStyle(seat.seatIndex, table.maxSeats, seatLayoutOpts)}
+                style={seatLayoutStyle(seat.seatIndex, table.maxSeats)}
                 className="z-20 flex w-[11.5rem] max-w-[42vw] flex-col items-stretch sm:max-w-none"
               >
                 {oppShowHole && hp && holeCardsReady(hp.hole) ? (
@@ -2075,10 +1947,7 @@ export function TableRoomClient({
         {/* Center: pot above community cards */}
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center pt-[2%]">
           <div className="pointer-events-auto flex max-h-[88%] max-w-[min(92%,420px)] flex-col items-center gap-2 px-1.5 text-center sm:max-w-[min(88%,480px)] sm:gap-3 sm:px-2">
-            <div
-              className={`pointer-events-none -mb-0.5 justify-center ${showLandscapeInPortrait || fitLaptopTableInPortrait ? "flex" : "hidden sm:flex"}`}
-              aria-hidden
-            >
+            <div className="pointer-events-none -mb-0.5 flex justify-center" aria-hidden>
               <div className="rotate-[-4deg] px-2 py-1.5 text-center">
                 <p className="text-[7px] font-semibold uppercase tracking-[0.34em] text-amber-200/85 sm:text-[8px] sm:tracking-[0.36em] [text-shadow:0_1px_2px_rgba(0,0,0,0.95),0_0_18px_rgba(251,191,36,0.12)]">
                   Private club
@@ -2150,9 +2019,7 @@ export function TableRoomClient({
           </div>
         </div>
         </div>
-        </div>
-        </div>
-        </div>
+      </div>
       </div>
 
       {sitSeat !== null ? (
@@ -2250,7 +2117,7 @@ export function TableRoomClient({
       ) : null}
 
       {showActionDock && hand && myHandPlayer ? (
-        <div className="pointer-events-auto fixed bottom-2 left-2 right-2 z-[110] w-auto max-w-none rounded-xl border border-zinc-800 bg-black/93 p-2 shadow-2xl shadow-black/60 backdrop-blur-md pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:bottom-3 sm:left-auto sm:right-3 sm:w-[min(calc(100vw-1rem),15.5rem)] sm:p-2.5">
+        <div className="pointer-events-auto fixed bottom-3 right-3 z-[110] w-[min(calc(100vw-1rem),15.5rem)] rounded-xl border border-zinc-800 bg-black/93 p-2.5 shadow-2xl shadow-black/60 backdrop-blur-md">
           <p className="text-center text-[9px] font-semibold uppercase tracking-widest text-zinc-500">Your action</p>
           <TableActionPanel
             hand={hand}
